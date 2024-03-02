@@ -1,0 +1,138 @@
+services:
+  proxy:
+    build:
+      context: "../reverse_proxy/"
+      dockerfile: Dockerfile
+      args:
+        - PORT=3000
+        - PKI_HOST=localhost:5500
+      target: final
+      network: host
+    ports:
+      - "3000:3000"
+    networks:
+      - internal
+      - public
+    healthcheck:
+      test: curl --fail http://proxy:3000/health || exit 1
+      interval: 60s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+  auth:
+    build:
+      context: "../api/"
+      dockerfile: Dockerfile
+      args:
+        - SERVICE_NAME=auth
+        - PORT=6000
+        - CSR_FILE_PATH=cert/request.csr
+        - CERT_FILE_PATH=cert/auth-service.cert
+        - PRIVATE_KEY_PATH=cert/auth-service.key
+        - PKI_HOST=localhost:5500
+      target: final
+      network: host
+    ports:
+      - "6000"
+    networks:
+      - auth
+      - internal
+    depends_on:
+      db-auth:
+        condition: service_healthy
+      proxy:
+        condition: service_healthy
+  account:
+    build:
+      context: "../api/"
+      dockerfile: Dockerfile
+      args:
+        - SERVICE_NAME=account
+        - PORT=8000
+        - CSR_FILE_PATH=cert/request.csr
+        - CERT_FILE_PATH=cert/account-service.cert
+        - PRIVATE_KEY_PATH=cert/account-service.key
+        - PKI_HOST=localhost:5500
+      target: final
+      network: host
+    ports:
+      - "8000"
+    networks:
+      - account
+      - internal
+    depends_on:
+      db-account:
+        condition: service_healthy
+      proxy:
+        condition: service_healthy
+  call:
+    build:
+      context: "../api/"
+      dockerfile: Dockerfile
+      args:
+        - SERVICE_NAME=call
+        - PORT=7000
+        - CSR_FILE_PATH=cert/request.csr
+        - CERT_FILE_PATH=cert/account-service.cert
+        - PRIVATE_KEY_PATH=cert/account-service.key
+        - PKI_HOST=localhost:5500
+      target: final
+      network: host
+    ports:
+      - "7000:7000"
+    networks:
+      - call
+      - public
+      - internal
+    depends_on:
+      db-call:
+        condition: service_healthy
+      proxy:
+        condition: service_healthy
+  mail:
+    build: "../mail/"
+    ports:
+      - "4000"
+    networks:
+      - internal
+
+  db-account:
+    build: "./db/account/"
+    ports:
+      - "5432"
+    networks:
+      - account
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "test"]
+      timeout: 20s
+      retries: 10
+
+  db-auth:
+    build: "./db/auth/"
+    ports:
+      - "5432"
+    networks:
+      - auth
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "test"]
+      timeout: 20s
+      retries: 10
+
+  db-call:
+    build: "./db/call/"
+    ports:
+      - "5432"
+    networks:
+      - call
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "test"]
+      timeout: 20s
+      retries: 10
+
+networks:
+  auth: {}
+  account: {}
+  internal: {}
+  call: {}
+  public: 
+    driver: bridge

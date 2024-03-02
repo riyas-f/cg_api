@@ -1,0 +1,54 @@
+# Eclipse Settings
+**/.settings
+
+# Eclipse m2e generated files
+# Eclipse Core
+.project
+# JDT-specific (Eclipse Java Development Tools)
+.classpath
+# VSCode Settings
+.vscode
+.metadata
+
+# maven project
+**/target
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+**/.metadata/
+
+# python 
+*.pyc
+Client/process/doodle/*
+
+# node js
+**/node_modules/
+
+# other files
+*.txt
+*.csv
+*.env
+**/app.config.json
+
+# go binary 
+**/bin/
+*.exe
+*.o
+
+# local files
+local/
+**/test_env/
+*.sql
+
+# private key and certificate
+cert
+*.key
+*.cert
+*.pem
+*.crt
