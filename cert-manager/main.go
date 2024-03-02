@@ -124,6 +124,12 @@ func main() {
 	}
 
 	r := mux.NewRouter()
+
+	r.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("I am healthy\n"))
+		w.WriteHeader(200)
+	})
+
 	r.HandleFunc("/certificate/sign", func(w http.ResponseWriter, r *http.Request) {
 		r.ParseMultipartForm(10 << 20) // 10 mb
 		csrFile, _, err := r.FormFile("csr")
