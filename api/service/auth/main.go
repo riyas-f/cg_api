@@ -56,29 +56,6 @@ func main() {
 
 	r := mux.NewRouter()
 
-	passphrasePath := os.Getenv(PASSPHRASE)
-
-	if passphrasePath == "" {
-		passphrasePath = "/tmp/passphrase"
-	}
-
-	rootCAPool := httputil.LoadRootCACertPool(os.Getenv(ROOT_CA_CERT))
-
-	cert, pKey := httputil.LoadCertificate(
-		os.Getenv(CERT_FILE_PATH),
-		os.Getenv(PRIVATE_KEY_PATH),
-		passphrasePath,
-	)
-
-	// set outbound tls configuration
-	config.Config = &tls.Config{
-		Certificates: []tls.Certificate{{
-			Certificate: [][]byte{cert.Raw},
-			PrivateKey:  pKey,
-		}},
-		RootCAs: rootCAPool,
-	}
-
 	routes.SetAuthRoute(r.PathPrefix("/v1").Subrouter(), db.DB, config)
 
 	// wait until the server has ended
@@ -88,6 +65,19 @@ func main() {
 	go func() {
 		defer wg.Done()
 		if strings.ToLower(config.Server.Secure) == "true" {
+			passphrasePath := os.Getenv(PASSPHRASE)
+
+			if passphrasePath == "" {
+				passphrasePath = "/tmp/passphrase"
+			}
+
+			cert, pKey := httputil.LoadCertificate(
+				os.Getenv(CERT_FILE_PATH),
+				os.Getenv(PRIVATE_KEY_PATH),
+				passphrasePath,
+			)
+
+			rootCAPool := httputil.LoadRootCACertPool(os.Getenv(ROOT_CA_CERT))
 
 			// Inbound tls configuration
 			tlsConfig := &tls.Config{
@@ -106,6 +96,15 @@ func main() {
 				Addr:      fmt.Sprintf("%s:%d", config.Server.Host, config.Server.Port),
 				Handler:   r,
 				TLSConfig: tlsConfig,
+			}
+
+			// set outbound tls configuration
+			config.Config = &tls.Config{
+				Certificates: []tls.Certificate{{
+					Certificate: [][]byte{cert.Raw},
+					PrivateKey:  pKey,
+				}},
+				RootCAs: rootCAPool,
 			}
 
 			srv.ListenAndServeTLS("", "")
