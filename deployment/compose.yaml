@@ -81,6 +81,7 @@ services:
       test: ["CMD", "pg_isready", "-U", "test"]
       timeout: 20s
       retries: 10
+
   db-auth:
     build: "./db/auth/"
     ports:
