@@ -14,7 +14,9 @@ const (
 	EmailInvalid         errorType = "invalid_email"
 	PayloadInvalid       errorType = "invalid_payload"
 	OTPInvalid           errorType = "invalid_otp"
+	OTPExpired           errorType = "otp_expired"
 	CallsStatusInvalid   errorType = "invalid_status_value"
+	SteamNotLinked       errorType = "steam_not_linked"
 )
 
 const (
@@ -27,7 +29,9 @@ const (
 	EmailInvalidMessage         errorMessageTemplate = "email is invalid"
 	PayloadInvalidMessage       errorMessageTemplate = "payload is invalid"
 	OTPInvalidMessage           errorMessageTemplate = "otp is invalid"
+	OTPExpiredMessage           errorMessageTemplate = "otp is expired. please resend a new otp to your email"
 	StatusInvalidMessage        errorMessageTemplate = "trying to update status to {{.reqStatus}} when user status is {{.status}}"
+	SteamNotLinkedMessage       errorMessageTemplate = "account has not been linked to steam yet"
 )
 
 // create response error with 400 Code and name string(t)
