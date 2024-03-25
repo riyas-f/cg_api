@@ -9,15 +9,14 @@ import (
 	"github.com/AdityaP1502/Instant-Messanging/api/http/responseerror"
 	"github.com/AdityaP1502/Instant-Messanging/api/jsonutil"
 	"github.com/AdityaP1502/Instant-Messanging/api/service/account/otp"
-	"github.com/google/uuid"
 )
 
 type UserOTP struct {
 	OTPID             string `json:"-" db:"otp_id"`
-	Username          string `json:"-" db:"username"`
-	OTPConfirmID      string `json:"otp_confirmation_id" db:"otp_confirmation_id"`
+	Email             string `json:"email" db:"email"`
 	OTP               string `json:"otp" db:"otp"`
 	LastResend        string `json:"-" db:"last_resend"`
+	ExpiredAt         string `json:"-" db:"expired_at"`
 	MarkedForDeletion string `json:"-" db:"marked_for_deletion"`
 }
 
@@ -47,7 +46,7 @@ func (o *UserOTP) ToJSON(checkRequired bool, requiredFields []string) ([]byte, e
 	return jsonutil.EncodeToJson(o)
 }
 
-func NewOTPPayload(username string) (*UserOTP, error) {
+func NewOTPPayload(email string, otpTTL int) (*UserOTP, error) {
 	otp, err := otp.GenerateOTP()
 
 	if err != nil {
@@ -55,9 +54,9 @@ func NewOTPPayload(username string) (*UserOTP, error) {
 	}
 
 	return &UserOTP{
-		Username:          username,
-		OTPConfirmID:      uuid.NewString(),
+		Email:             email,
 		OTP:               otp,
+		ExpiredAt:         date.GenerateTimestampWithOffset(otpTTL),
 		LastResend:        date.GenerateTimestamp(),
 		MarkedForDeletion: strconv.FormatBool(false),
 	}, nil
