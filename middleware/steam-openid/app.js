@@ -1,4 +1,5 @@
 const express = require('express')
+const axios = require('axios')
 const passport = require('passport')
 const session = require('express-session')
 const SteamStrategy = require('passport-steam').Strategy;
@@ -8,8 +9,36 @@ const path = require('path');
 // TODO: THIS IS STILL A CRUDE IMPLEMENTATION OF 
 // STEAM ACCOUNT LINK
 
+const CERT_FILE = process.env.CERT_FILE | 'cert/client.crt'
+const KEY_FILE = process.env.KEY_FILE | 'cert/client.key'
+const ROOT_CA = process.env.ROOT_CA | 'cert/root-ca.crt'
 
-const REDIRECT_URL = 'somewhere'
+// TODO: Handle certificate
+const httpsAgent = new https.Agent({
+  cert: fs.readFileSync(CERT_FILE),
+  key: fs.readFileSync(KEY_FILE),
+  ca: fs.readFileSync(ROOT_CA),
+});
+
+
+async function getSteamOwnedGames(steamID) {
+  url = 'https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/'
+
+  //https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?steamid=76561198221895016&include_played_free_games=1&include_appinfo=1&format=json
+  const res = await axios.get(
+    url, {
+      params: {
+        steamid: steamID,
+        include_played_free_games: 1,
+        include_appinfo: 1,
+        format: 'json',
+      }
+    }
+  )
+
+  
+  return res
+}
 
 
 // Passport session setup.
@@ -39,7 +68,7 @@ passport.deserializeUser(function(obj, done) {
 //   credentials (in this case, an OpenID identifier and profile), and invoke a
 //   callback with a user object.
 passport.use(new SteamStrategy({
-    returnURL: 'http://localhost:3000/auth/steam/return',
+    returnURL: 'http://localhost:3000/middleware/steam/return',
     realm: 'http://localhost:3000/',
     profile: false,
   },
@@ -80,7 +109,7 @@ app.use(express.static(__dirname + '/../../public'));
 //   request.  The first step in Steam authentication will involve redirecting
 //   the user to steamcommunity.com.  After authenticating, Steam will redirect the
 //   user back to this application at /auth/steam/return
-app.get('/auth/steam',
+app.get('/middleware/steam',
   passport.authenticate('steam', { failureRedirect: '/' }),
   function(req, res) {
     res.redirect('/');
@@ -91,11 +120,17 @@ app.get('/auth/steam',
 //   request.  If authentication fails, the user will be redirected back to the
 //   login page.  Otherwise, the primary route function function will be called,
 //   which, in this example, will redirect the user to the home page.
-app.get('/auth/steam/return',
+app.get('/middleware/steam/return',
   passport.authenticate('steam', { failureRedirect: '/' }),
-  function(req, res) {
+  async function(req, res) {
     splitStr = req.user.identifier.split("/")
     id = splitStr[splitStr.length - 1]
+    console.log(id)
+
+    const userGames = getSteamOwnedGames(id)
+    // sync games
+    axios.post() 
+
     res.redirect('/');
 });
 
