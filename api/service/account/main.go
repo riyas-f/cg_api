@@ -78,28 +78,40 @@ func main() {
 	// }).Methods("GET")
 
 	// wait until the server has ended
+
+	passphrasePath := os.Getenv(PASSPHRASE)
+
+	if passphrasePath == "" {
+		passphrasePath = "/tmp/passphrase"
+	}
+
+	cert, pKey := httputil.LoadCertificate(
+		os.Getenv(CERT_FILE_PATH),
+		os.Getenv(PRIVATE_KEY_PATH),
+		passphrasePath,
+	)
+
+	// load ca cert pool
+	caCertPool := httputil.LoadRootCACertPool(os.Getenv(ROOT_CA_CERT))
+
+	// outbound tls config (to internal service)
+	config.Config = &tls.Config{
+		Certificates: []tls.Certificate{
+			{
+				Certificate: [][]byte{cert.Raw},
+				PrivateKey:  pKey,
+			},
+		},
+
+		RootCAs: caCertPool,
+	}
+
 	var wg sync.WaitGroup
 	wg.Add(1)
 
 	go func() {
 		defer wg.Done()
 		if strings.ToLower(config.Server.Secure) == "true" {
-
-			passphrasePath := os.Getenv(PASSPHRASE)
-
-			if passphrasePath == "" {
-				passphrasePath = "/tmp/passphrase"
-			}
-
-			cert, pKey := httputil.LoadCertificate(
-				os.Getenv(CERT_FILE_PATH),
-				os.Getenv(PRIVATE_KEY_PATH),
-				passphrasePath,
-			)
-
-			// load ca cert pool
-			caCertPool := httputil.LoadRootCACertPool(os.Getenv(ROOT_CA_CERT))
-
 			// inbound tls config (from proxy)
 			tlsConfig := &tls.Config{
 				Certificates: []tls.Certificate{
@@ -111,17 +123,6 @@ func main() {
 				MinVersion: tls.VersionTLS10,
 			}
 
-			// outbound tls config (to internal service)
-			config.Config = &tls.Config{
-				Certificates: []tls.Certificate{
-					{
-						Certificate: [][]byte{cert.Raw},
-						PrivateKey:  pKey,
-					},
-				},
-
-				RootCAs: caCertPool,
-			}
 			srv := http.Server{
 				Addr:      fmt.Sprintf("%s:%d", config.Server.Host, config.Server.Port),
 				Handler:   r,
