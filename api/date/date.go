@@ -9,10 +9,6 @@ func GenerateTimestamp() string {
 	return time.Now().Format(time.RFC3339)
 }
 
-func GenerateTimestampWithOffset(offsetMinute int) string {
-	return time.Now().Add(time.Duration(offsetMinute) * time.Minute).Format(time.RFC3339)
-}
-
 func ParseTimestamp(timestamp string) (time.Time, error) {
 	t, err := time.Parse(time.RFC3339, timestamp)
 
