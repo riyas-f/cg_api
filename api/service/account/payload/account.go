@@ -12,6 +12,7 @@ import (
 
 type Account struct {
 	AccountID string `json:"-" db:"account_id"`
+	SteamID   string `json:"steamid" db:"steamid"`
 	Username  string `json:"username" db:"username"`
 	Name      string `json:"name" db:"name"`
 	Email     string `json:"email" db:"email"`
