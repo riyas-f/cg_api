@@ -60,17 +60,6 @@ func main() {
 		break
 	}
 
-	r := mux.NewRouter()
-
-	routes.SetAccountRoute(r.PathPrefix("/v1").Subrouter(), db.DB, config)
-	// // r.Handle("/", r)
-
-	r.HandleFunc("/test", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("WTF is happening")
-		w.Write([]byte("Hello, world!"))
-		w.WriteHeader(200)
-	}).Methods("GET")
-
 	// a := s.PathPrefix("/account").Subrouter()
 
 	// a.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -106,6 +95,17 @@ func main() {
 		RootCAs: caCertPool,
 	}
 
+	r := mux.NewRouter()
+
+	routes.SetAccountRoute(r.PathPrefix("/v1").Subrouter(), db.DB, config)
+	// // r.Handle("/", r)
+
+	r.HandleFunc("/test", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("WTF is happening")
+		w.Write([]byte("Hello, world!"))
+		w.WriteHeader(200)
+	}).Methods("GET")
+	
 	var wg sync.WaitGroup
 	wg.Add(1)
 
