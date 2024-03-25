@@ -55,3 +55,7 @@ cert
 *.cert
 *.pem
 *.crt
+
+
+**/env
+**/site
