@@ -224,7 +224,11 @@ func loginHandler(db *sql.DB, conf interface{}, w http.ResponseWriter, r *http.R
 	case nil:
 		break
 	case sql.ErrNoRows:
-		return responseerror.CreateNotFoundError(map[string]string{"resourceName": "email"})
+		return responseerror.CreateUnauthenticatedError(
+			responseerror.InvalidCredentials,
+			responseerror.InvalidCredentialsMessage,
+			nil,
+		)
 	default:
 		return responseerror.CreateInternalServiceError(err)
 	}
