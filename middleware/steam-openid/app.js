@@ -11,7 +11,9 @@ const path = require('path');
 // TODO: THIS IS STILL A CRUDE IMPLEMENTATION OF 
 // STEAM ACCOUNT LINK
 
-const SYNC_ENDPOINT_HOST = 'localhost:3000'
+const SYNC_ENDPOINT_HOST = 'localhost:3000/v1/games'
+const LINK_ENDPOINT_HOST = `localhost:3000/v1/account`
+
 const CERT_FILE = process.env.CERT_FILE | 'cert/client.crt'
 const KEY_FILE = process.env.KEY_FILE | 'cert/client.key'
 const ROOT_CA = process.env.ROOT_CA | 'cert/root-ca.crt'
@@ -41,7 +43,7 @@ async function getSteamOwnedGames(steamID) {
   )
 
   
-  return res
+  return res.data.response
 }
 
 
@@ -141,9 +143,41 @@ app.get('/middleware/steam/return/:username',
     id = splitStr[splitStr.length - 1]
 
     const userGames = await getSteamOwnedGames(id)
-    console.log(userGames.data.response)
+    
+    // filter data in userGames
+
+    filteredUserGames = userGames.games.map(obj => {
+      return {
+        name: obj.name,
+        app_id:obj.appid,
+        icon_url:`"http://media.steampowered.com/steamcommunity/public/images/apps/${obj.appid}/${obj.img_icon_url}.jpg"`
+      }
+    })
+
+
+    data = {
+      games: filteredUserGames
+    }
+
+    console.log(data)
+
+    // add link to user
+    const res = await axios(
+      {
+        method: 'post',
+        url: `http://${LINK_ENDPOINT_HOST}/${username}/steam`,
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        data: {
+          steamid: id          
+        },
+        httpsAgent
+      }
+    )
+
     // sync games
-    // axios.post(`https://{$SYNC_ENDPOINT_HOST}/v1/games/{$username}/sync`, { httpsAgent }) 
+    // axios.post(`https://${SYNC_ENDPOINT_HOST}/${username}/sync`, { httpsAgent }) 
 
     // res.redirect('/');
 });
