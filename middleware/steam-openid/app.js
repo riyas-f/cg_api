@@ -1,12 +1,9 @@
 const express = require('express')
-const https = require('https')
-const fs = require('fs')
-const axios = require('axios')
 const passport = require('passport')
 const session = require('express-session')
 const SteamStrategy = require('passport-steam').Strategy;
-const path = require('path');
 
+const {axios, instance} = require('./configure_https_agent');
 
 // TODO: THIS IS STILL A CRUDE IMPLEMENTATION OF 
 // STEAM ACCOUNT LINK
@@ -14,16 +11,14 @@ const path = require('path');
 const SYNC_ENDPOINT_HOST = 'localhost:3000/v1/games'
 const LINK_ENDPOINT_HOST = `localhost:3000/v1/account`
 
-const CERT_FILE = process.env.CERT_FILE | 'cert/client.crt'
-const KEY_FILE = process.env.KEY_FILE | 'cert/client.key'
-const ROOT_CA = process.env.ROOT_CA | 'cert/root-ca.crt'
+
 
 // TODO: Handle certificate
-// const httpsAgent = new https.Agent({
-//   cert: fs.readFileSync(CERT_FILE),
-//   key: fs.readFileSync(KEY_FILE),
-//   ca: fs.readFileSync(ROOT_CA),
-// });
+const httpsAgent = new https.Agent({
+  cert: fs.readFileSync(CERT_FILE),
+  key: fs.readFileSync(KEY_FILE),
+  ca: fs.readFileSync(ROOT_CA),
+});
 
 
 async function getSteamOwnedGames(steamID) {
@@ -101,8 +96,10 @@ app.use(express.static(__dirname + '/../../public'));
 
 const configurePassport = (req, res, next) => {
   const { username } = req.params;
+  const { failRedirect, successRedirect } = req.query;
+
   passport.use(new SteamStrategy({
-    returnURL: `http://localhost:3000/middleware/steam/return/${username}`,
+    returnURL: `http://localhost:3000/middleware/steam/return/${username}?failureRedirect=${failRedirect}&successRedirect=${successRedirect}`,
     realm: 'http://localhost:3000/',
     profile: false,
   },
@@ -121,8 +118,8 @@ const configurePassport = (req, res, next) => {
   ));
   next()
 }
-app.use('/middleware/steam/:username', configurePassport)
-app.use('/middleware/steam/return/:username', configurePassport)
+app.use('/middleware/steam/:username', configurePassport);
+app.use('/middleware/steam/return/:username', configurePassport);
 
 app.get('/middleware/steam/:username',
   passport.authenticate('steam', { failureRedirect: '/' }),
@@ -139,47 +136,68 @@ app.get('/middleware/steam/return/:username',
   passport.authenticate('steam', { failureRedirect: '/' }),
   async function(req, res) {
     console.log(req.params.username);
-    splitStr = req.user.identifier.split("/")
-    id = splitStr[splitStr.length - 1]
 
-    const userGames = await getSteamOwnedGames(id)
+    const { failRedirect, successRedirect } = req.query;
+
+    splitStr = req.user.identifier.split("/");
+    id = splitStr[splitStr.length - 1];
+
+    const userGames = await getSteamOwnedGames(id);
     
     // filter data in userGames
-
     filteredUserGames = userGames.games.map(obj => {
       return {
         name: obj.name,
         app_id:obj.appid,
         icon_url:`"http://media.steampowered.com/steamcommunity/public/images/apps/${obj.appid}/${obj.img_icon_url}.jpg"`
       }
-    })
+    });
 
 
     data = {
       games: filteredUserGames
+    };
+
+    console.log(data);
+
+    // link steam account
+    let resp = instance.post(`https://${LINK_ENDPOINT_HOST}/${username}/steam`, 
+    {
+      steamid: id
+    }, 
+    {
+      headers: {
+        'Content-Type':'application/json',
+      }
+    });
+
+    console.log(resp.data.response);
+    
+    if (resp.status != 200) {
+      // res.redirect(failRedirect);
+      return;
     }
 
-    console.log(data)
-
-    // add link to user
-    const res = await axios(
-      {
-        method: 'post',
-        url: `http://${LINK_ENDPOINT_HOST}/${username}/steam`,
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        data: {
-          steamid: id          
-        },
-        httpsAgent
-      }
-    )
 
     // sync games
-    // axios.post(`https://${SYNC_ENDPOINT_HOST}/${username}/sync`, { httpsAgent }) 
+    resp = await instance.post(`https://${SYNC_ENDPOINT_HOST}/${username}/sync`, 
+    {
+      games: data,
+    }, 
+    {
+      headers: {
+        'Content-Type':'application/json',
+      }
+    }); 
 
-    // res.redirect('/');
+    if (resp.status != 200) {
+      resp = await instance.delete(`https://${LINK_ENDPOINT_HOST}/${username}/steam`);
+      // res.redirect(failRedirect);
+    }
+
+
+    const res = instance.post('')
+    // res.redirect(successRedirect);
 });
 
   
