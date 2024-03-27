@@ -88,12 +88,21 @@ services:
         condition: service_healthy
       proxy:
         condition: service_healthy
+  # middleware service
   mail:
     build: "../middleware/mail/"
     ports:
       - "4000"
     networks:
       - internal
+
+  steam-openid:
+    build: "../middleware/steam-openid/"
+    ports:
+      - "9700"
+    networks:
+      - internal
+
   db-account:
     build: "./db/account/"
     ports:
