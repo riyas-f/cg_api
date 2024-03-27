@@ -97,10 +97,18 @@ services:
       - internal
 
   steam-openid:
-    build: "../middleware/steam-openid/"
+    build: 
+      context: "../middleware/steam-openid/"
+      args:
+        - PORT=9700
+        - CSR_FILE_PATH=cert/request.csr
+        - CERT_FILE_PATH=cert/steam-middleware.cert
+        - PRIVATE_KEY_PATH=cert/steam-middleware.key
+        - PKI_HOST=localhost:5500
     ports:
-      - "9700"
+      - "9700:9700"
     networks:
+      - public
       - internal
 
   db-account:
