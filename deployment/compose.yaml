@@ -65,12 +65,52 @@ services:
         condition: service_healthy
       proxy:
         condition: service_healthy
+  games:
+    build:
+      context: "../api/"
+      dockerfile: Dockerfile
+      args:
+        - SERVICE_NAME=games
+        - PORT=3500
+        - CSR_FILE_PATH=cert/request.csr
+        - CERT_FILE_PATH=cert/auth-service.cert
+        - PRIVATE_KEY_PATH=cert/auth-service.key
+        - PKI_HOST=localhost:5500
+      target: final
+      network: host
+    ports:
+      - "3500"
+    networks:
+      - games
+      - internal
+    depends_on:
+      db-games:
+        condition: service_healthy
+      proxy:
+        condition: service_healthy
+  # middleware service
   mail:
     build: "../middleware/mail/"
     ports:
       - "4000"
     networks:
       - internal
+
+  steam-openid:
+    build: 
+      context: "../middleware/steam-openid/"
+      args:
+        - PORT=9700
+        - CSR_FILE_PATH=cert/request.csr
+        - CERT_FILE_PATH=cert/steam-middleware.cert
+        - PRIVATE_KEY_PATH=cert/steam-middleware.key
+        - PKI_HOST=localhost:5500
+    ports:
+      - "9700:9700"
+    networks:
+      - public
+      - internal
+
   db-account:
     build: "./db/account/"
     ports:
@@ -91,10 +131,22 @@ services:
       test: ["CMD", "pg_isready", "-U", "test"]
       timeout: 20s
       retries: 10
+
+  db-games:
+    build: "./db/games/"
+    ports:
+      - "5432"
+    networks:
+      - games
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "test"]
+      timeout: 20s
+      retries: 10
+
 networks:
   auth: {}
   account: {}
+  games: {}
   internal: {}
-  call: {}
   public: 
     driver: bridge
