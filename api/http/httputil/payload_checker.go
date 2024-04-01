@@ -2,6 +2,7 @@ package httputil
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"reflect"
 	"strings"
@@ -42,6 +43,23 @@ func CheckParametersUnity(v interface{}, requiredField []string) responseerror.H
 		v := s.FieldByName(field)
 		if v.IsValid() {
 			// check if a field is empty
+			fmt.Println(v.Type().Kind() == reflect.Slice)
+			if v.Type().Kind() == reflect.Slice {
+				if v.Len() == 0 {
+					f, _ := typeS.FieldByName(field)
+					tag := strings.SplitN(f.Tag.Get("json"), ",", 2)[0]
+					return responseerror.CreateBadRequestError(
+						responseerror.MissingParameter,
+						responseerror.MissingParameterMessage,
+						map[string]string{
+							"field": tag,
+						},
+					)
+				}
+
+				continue
+			}
+
 			if reflect.Zero(v.Type()).Interface() == v.Interface() {
 				f, _ := typeS.FieldByName(field)
 				tag := strings.SplitN(f.Tag.Get("json"), ",", 2)[0]
