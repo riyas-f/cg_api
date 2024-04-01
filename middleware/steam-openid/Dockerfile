@@ -1,11 +1,15 @@
 FROM node:16-alpine
 
+ARG SERVICE_NAME
 ARG CSR_FILE_PATH
 ARG CERT_FILE_PATH
 ARG PRIVATE_KEY_PATH
 ARG CSR_PATH
 ARG PKI_HOST
 
+RUN apk update && \
+    apk add --no-cache openssl curl
+    
 WORKDIR /app
 
 COPY . .
