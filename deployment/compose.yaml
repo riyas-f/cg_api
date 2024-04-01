@@ -73,8 +73,8 @@ services:
         - SERVICE_NAME=games
         - PORT=3500
         - CSR_FILE_PATH=cert/request.csr
-        - CERT_FILE_PATH=cert/auth-service.cert
-        - PRIVATE_KEY_PATH=cert/auth-service.key
+        - CERT_FILE_PATH=cert/games-service.cert
+        - PRIVATE_KEY_PATH=cert/games-service.key
         - PKI_HOST=localhost:5500
       target: final
       network: host
@@ -100,16 +100,18 @@ services:
     build: 
       context: "../middleware/steam-openid/"
       args:
-        - PORT=9700
+        - PORT=7000
+        - SERVICE_NAME=steam-middleware
         - CSR_FILE_PATH=cert/request.csr
         - CERT_FILE_PATH=cert/steam-middleware.cert
         - PRIVATE_KEY_PATH=cert/steam-middleware.key
         - PKI_HOST=localhost:5500
+      network: host
     ports:
-      - "9700:9700"
+      - "7000:700"
     networks:
-      - public
       - internal
+      - public
 
   db-account:
     build: "./db/account/"
