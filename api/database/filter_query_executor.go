@@ -118,7 +118,7 @@ func (f *FilteredQueryExecutor) BatchInsert(data interface{}, db *sql.DB, tableN
 
 	r = r[:len(r)-len(",")] // select string
 
-	for i := 0; i < len(valueArgs); i++ {
+	for i := 0; i < len(valueArgs); {
 		v += "("
 		for j := 0; j < nCol; j++ {
 			v += fmt.Sprintf("$%d", i+1)
@@ -127,6 +127,7 @@ func (f *FilteredQueryExecutor) BatchInsert(data interface{}, db *sql.DB, tableN
 				v += addCast(reflect.TypeOf(valueArgs[i]).Kind())
 			}
 			v += ","
+			i++
 		}
 		v = v[:len(v)-1]
 		v += "),"
