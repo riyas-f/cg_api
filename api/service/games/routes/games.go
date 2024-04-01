@@ -48,12 +48,15 @@ func syncUserGamesHandler(db *sql.DB, conf interface{}, w http.ResponseWriter, r
 	}
 
 	filterExecutor.AddTableSource("games", "game_id", "game_id")
-	err = filterExecutor.BatchInsert(userGames, db, "user_games_collections")
+	filterExecutor.UseExplicitCast()
+	err = filterExecutor.BatchInsert(userGames, db, "user_games")
 
 	if err != nil {
 		if filterExecutor.Tx != nil {
 			filterExecutor.Rollback()
 		}
+
+		return responseerror.CreateInternalServiceError(err)
 	}
 
 	json, err := jsonutil.EncodeToJson(&GenericResponse{
@@ -74,7 +77,7 @@ func syncUserGamesHandler(db *sql.DB, conf interface{}, w http.ResponseWriter, r
 }
 
 func SetGamesRoute(r *mux.Router, db *sql.DB, conf *config.Config) {
-	certMiddleware := middleware.CertMiddleware(conf.RootCAs)
+	// certMiddleware := middleware.CertMiddleware(conf.RootCAs)
 
 	syncGamesPayloadMiddleware, err := middleware.PayloadCheckMiddleware(
 		&payload.Collections{},
@@ -88,9 +91,10 @@ func SetGamesRoute(r *mux.Router, db *sql.DB, conf *config.Config) {
 	subrouter := r.PathPrefix("/games").Subrouter()
 
 	syncGames := httpx.CreateHTTPHandler(db, conf, syncUserGamesHandler)
-	subrouter.Handle("/{username}/sync", middleware.UseMiddleware(db, conf, syncGames,
-		certMiddleware,
-		syncGamesPayloadMiddleware,
-	))
+	// subrouter.Handle("/{username}/sync", middleware.UseMiddleware(db, conf, syncGames,
+	// 	certMiddleware,
+	// 	syncGamesPayloadMiddleware,
+	// ))
+	subrouter.Handle("/{username}/sync", middleware.UseMiddleware(db, conf, syncGames, syncGamesPayloadMiddleware)).Methods("POST")
 
 }
