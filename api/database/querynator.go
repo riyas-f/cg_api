@@ -155,6 +155,19 @@ func (q *Querynator) Update(v interface{}, conditionNames []string, conditionVal
 	return err
 }
 
+func (q *Querynator) UpdateUsingColumnNames(columnNames []string, columnValues []any, conditionNames []string, conditionValues []any, db QueryOperation, tableName string) error {
+	updateFieldsString := transformNamesToUpdateQuery(columnNames, 1, ",")
+	conditionFieldsString := transformNamesToUpdateQuery(conditionNames, len(columnNames)+1, " AND ")
+
+	query := fmt.Sprintf("UPDATE %s SET %s WHERE %s", tableName, updateFieldsString, conditionFieldsString)
+
+	columnValues = append(columnValues, conditionValues...)
+
+	_, err := db.Exec(query, columnValues...)
+
+	return err
+}
+
 func (q *Querynator) IsExists(v interface{}, db *sql.DB, tableName string) (bool, error) {
 	// Check if a record exist with any of the field in V
 	//https://stackoverflow.com/questions/32554400/efficiently-determine-if-any-rows-satisfy-a-predicate-in-postgres?rq=3
