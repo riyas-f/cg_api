@@ -527,7 +527,56 @@ func linkSteamAccountHandler(db *sql.DB, _ interface{}, w http.ResponseWriter, r
 	return nil
 }
 
-func getUserSteamID(db *sql.DB, _ interface{}, w http.ResponseWriter, r *http.Request) responseerror.HTTPCustomError {
+func rollbackSteamLinkHandler(db *sql.DB, _ interface{}, w http.ResponseWriter, r *http.Request) responseerror.HTTPCustomError {
+	vars := mux.Vars(r)
+	username := vars["username"]
+
+	// check if username exist
+	isExist, err := querynator.IsExists(&payload.Account{Username: username}, db, "account")
+
+	if err != nil {
+		return responseerror.CreateInternalServiceError(err)
+	}
+
+	if !isExist {
+		return responseerror.CreateNotFoundError(map[string]string{
+			"resourceName": "username",
+		})
+	}
+
+	sqlxDb := sqlx.NewDb(db, "postgres")
+	tx, err := sqlxDb.Beginx()
+
+	if err != nil {
+		return responseerror.CreateInternalServiceError(err)
+	}
+
+	err = querynator.Update(&payload.Account{SteamID: ""}, []string{"username"}, []any{username}, tx, "account")
+
+	if err != nil {
+		tx.Rollback()
+		return responseerror.CreateInternalServiceError(err)
+	}
+
+	json, err := jsonutil.EncodeToJson(&GenericResponse{
+		Status:  "success",
+		Message: "account is linked successfully",
+	})
+
+	if err != nil {
+		tx.Rollback()
+		return responseerror.CreateInternalServiceError(err)
+	}
+
+	w.WriteHeader(200)
+	w.Write(json)
+
+	tx.Commit()
+
+	return nil
+}
+
+func getUserSteamIDHandler(db *sql.DB, _ interface{}, w http.ResponseWriter, r *http.Request) responseerror.HTTPCustomError {
 	vars := mux.Vars(r)
 	username := vars["username"]
 
@@ -582,7 +631,7 @@ func SetAccountRoute(r *mux.Router, db *sql.DB, config *config.Config) {
 
 	subrouter.Use(middleware.RouteGetterMiddleware)
 
-	certMiddleware := middleware.CertMiddleware(config.RootCAs)
+	// certMiddleware := middleware.CertMiddleware(config.RootCAs)
 
 	// Create middleware here
 	userPayloadMiddleware, err := middleware.PayloadCheckMiddleware(&payload.Account{}, "Username", "Name", "Email", "Password")
@@ -652,10 +701,14 @@ func SetAccountRoute(r *mux.Router, db *sql.DB, config *config.Config) {
 	subrouter.Handle("/login", middleware.UseMiddleware(db, config, login, loginPayloadMIddleware)).Methods("POST")
 
 	linkSteamId := httpx.CreateHTTPHandler(db, config, linkSteamAccountHandler)
-	subrouter.Handle("/{username}/steam", middleware.UseMiddleware(db, config, linkSteamId, certMiddleware, linkSteamPayloadMiddleware)).Methods("POST")
+	subrouter.Handle("/{username}/steam", middleware.UseMiddleware(db, config, linkSteamId, linkSteamPayloadMiddleware)).Methods("POST")
 
-	getSteamId := httpx.CreateHTTPHandler(db, config, getUserSteamID)
+	getSteamId := httpx.CreateHTTPHandler(db, config, getUserSteamIDHandler)
 	subrouter.Handle("/{username}/steam", getSteamId).Methods("GET")
+
+	rollbackSteamID := httpx.CreateHTTPHandler(db, config, rollbackSteamLinkHandler)
+	// subrouter.Handle("/{username}/steam", middleware.UseMiddleware(db, config, rollbackSteamID, certMiddleware)).Methods("DELETE")
+	subrouter.Handle("/{username}/steam", rollbackSteamID).Methods("DELETE")
 
 	// subrouter.HandleFunc("/logout", logOutHandler).Methods("POST")
 	// subrouter.HandleFunc("/{username}", patchUserInfoHandler).Methods("PATCH")
