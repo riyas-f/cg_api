@@ -482,17 +482,40 @@ func linkSteamAccountHandler(db *sql.DB, _ interface{}, w http.ResponseWriter, r
 	username := vars["username"]
 	body := r.Context().Value(middleware.PayloadKey).(*payload.Account)
 
-	// check if username exist
-	isExist, err := querynator.IsExists(&payload.Account{Username: username}, db, "account")
+	// // TODO: Check if username exist and steamid is linkd
+	// isExist, err := querynator.IsExists(&payload.Account{Username: username}, db, "account")
 
-	if err != nil {
-		return responseerror.CreateInternalServiceError(err)
-	}
+	// if err != nil {
+	// 	return responseerror.CreateInternalServiceError(err)
+	// }
 
-	if !isExist {
+	// if !isExist {
+	// 	return responseerror.CreateNotFoundError(map[string]string{
+	// 		"resourceName": "username",
+	// 	})
+	// }
+
+	user := &payload.Account{}
+
+	err := querynator.FindOne(&payload.Account{Username: username}, user, db, "account", "steamid")
+
+	switch err {
+	case nil:
+		break
+	case sql.ErrNoRows:
 		return responseerror.CreateNotFoundError(map[string]string{
 			"resourceName": "username",
 		})
+	default:
+		return responseerror.CreateInternalServiceError(err)
+	}
+
+	if user.SteamID != "" {
+		return responseerror.CreateBadRequestError(
+			responseerror.SteamAlreadyLinked,
+			responseerror.SteamAlreadyLinkedMessage,
+			nil,
+		)
 	}
 
 	sqlxDb := sqlx.NewDb(db, "postgres")
@@ -551,7 +574,8 @@ func rollbackSteamLinkHandler(db *sql.DB, _ interface{}, w http.ResponseWriter, 
 		return responseerror.CreateInternalServiceError(err)
 	}
 
-	err = querynator.Update(&payload.Account{SteamID: ""}, []string{"username"}, []any{username}, tx, "account")
+	err = querynator.UpdateUsingColumnNames([]string{"steamid"}, []any{""}, []string{"username"}, []any{username}, tx, "account")
+	// err = querynator.Update(&payload.Account{SteamID: ""}, []string{"username"}, []any{username}, tx, "account")
 
 	if err != nil {
 		tx.Rollback()
@@ -560,7 +584,7 @@ func rollbackSteamLinkHandler(db *sql.DB, _ interface{}, w http.ResponseWriter, 
 
 	json, err := jsonutil.EncodeToJson(&GenericResponse{
 		Status:  "success",
-		Message: "account is linked successfully",
+		Message: "account has been unlinked from steam",
 	})
 
 	if err != nil {
