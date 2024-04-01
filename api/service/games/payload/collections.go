@@ -9,8 +9,8 @@ import (
 )
 
 type Games struct {
+	GameID  int    `json:"app_id"`
 	Name    string `json:"name"`
-	GameID  string `json:"app_id"`
 	IconURL string `json:"icon_url"`
 }
 
