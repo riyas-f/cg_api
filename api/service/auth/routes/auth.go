@@ -16,6 +16,7 @@ import (
 	"github.com/AdityaP1502/Instant-Messanging/api/service/auth/jwtutil"
 	"github.com/AdityaP1502/Instant-Messanging/api/service/auth/payload"
 	"github.com/gorilla/mux"
+	"github.com/rs/cors"
 )
 
 type RevokedToken struct {
@@ -221,11 +222,20 @@ func SetAuthRoute(r *mux.Router, db *sql.DB, conf *config.Config) {
 		Handler: httpx.HandlerLogic(IssueTokenHandler),
 	}
 
-	refreshToken := &httpx.Handler{
-		DB:      db,
-		Config:  conf,
-		Handler: httpx.HandlerLogic(RefreshTokenHandler),
-	}
+	// refreshToken := &httpx.Handler{
+	// 	DB:      db,
+	// 	Config:  conf,
+	// 	Handler: httpx.HandlerLogic(RefreshTokenHandler),
+	// }
+
+	refreshToken := httpx.CreateHTTPHandler(db, conf, RefreshTokenHandler, &cors.Options{
+		AllowedOrigins:   []string{"*"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
+		AllowedHeaders:   []string{"Content-Type", "Authorization"},
+		ExposedHeaders:   []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           86400, // time in seconds
+	})
 
 	verifyToken := &httpx.Handler{
 		DB:      db,
