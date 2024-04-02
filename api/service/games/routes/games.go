@@ -90,7 +90,7 @@ func SetGamesRoute(r *mux.Router, db *sql.DB, conf *config.Config) {
 
 	subrouter := r.PathPrefix("/games").Subrouter()
 
-	syncGames := httpx.CreateHTTPHandler(db, conf, syncUserGamesHandler)
+	syncGames := httpx.CreateHTTPHandler(db, conf, syncUserGamesHandler, nil)
 	subrouter.Handle("/{username}/sync", middleware.UseMiddleware(db, conf, syncGames,
 		certMiddleware,
 		syncGamesPayloadMiddleware,
