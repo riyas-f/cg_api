@@ -655,7 +655,7 @@ func SetAccountRoute(r *mux.Router, db *sql.DB, config *config.Config) {
 
 	subrouter.Use(middleware.RouteGetterMiddleware)
 
-	// certMiddleware := middleware.CertMiddleware(config.RootCAs)
+	certMiddleware := middleware.CertMiddleware(config.RootCAs)
 
 	// Create middleware here
 	userPayloadMiddleware, err := middleware.PayloadCheckMiddleware(&payload.Account{}, "Username", "Name", "Email", "Password")
@@ -725,14 +725,14 @@ func SetAccountRoute(r *mux.Router, db *sql.DB, config *config.Config) {
 	subrouter.Handle("/login", middleware.UseMiddleware(db, config, login, loginPayloadMIddleware)).Methods("POST")
 
 	linkSteamId := httpx.CreateHTTPHandler(db, config, linkSteamAccountHandler)
-	subrouter.Handle("/{username}/steam", middleware.UseMiddleware(db, config, linkSteamId, linkSteamPayloadMiddleware)).Methods("POST")
+	subrouter.Handle("/{username}/steam", middleware.UseMiddleware(db, config, linkSteamId, certMiddleware, linkSteamPayloadMiddleware)).Methods("POST")
 
 	getSteamId := httpx.CreateHTTPHandler(db, config, getUserSteamIDHandler)
 	subrouter.Handle("/{username}/steam", getSteamId).Methods("GET")
 
 	rollbackSteamID := httpx.CreateHTTPHandler(db, config, rollbackSteamLinkHandler)
-	// subrouter.Handle("/{username}/steam", middleware.UseMiddleware(db, config, rollbackSteamID, certMiddleware)).Methods("DELETE")
-	subrouter.Handle("/{username}/steam", rollbackSteamID).Methods("DELETE")
+	subrouter.Handle("/{username}/steam", middleware.UseMiddleware(db, config, rollbackSteamID, certMiddleware)).Methods("DELETE")
+	// subrouter.Handle("/{username}/steam", rollbackSteamID).Methods("DELETE")
 
 	// subrouter.HandleFunc("/logout", logOutHandler).Methods("POST")
 	// subrouter.HandleFunc("/{username}", patchUserInfoHandler).Methods("PATCH")

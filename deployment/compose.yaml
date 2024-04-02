@@ -108,7 +108,7 @@ services:
         - PKI_HOST=localhost:5500
       network: host
     ports:
-      - "7000:700"
+      - "7000:7000"
     networks:
       - internal
       - public

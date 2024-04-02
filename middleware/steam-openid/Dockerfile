@@ -1,5 +1,6 @@
 FROM node:16-alpine
 
+ARG PORT
 ARG SERVICE_NAME
 ARG CSR_FILE_PATH
 ARG CERT_FILE_PATH
@@ -19,8 +20,10 @@ COPY . .
 
 RUN npm install
 
+ENV port ${PORT}
 ENV CERT_FILE_PATH ${CERT_FILE_PATH}
 ENV PRIVATE_KEY_PATH ${PRIVATE_KEY_PATH}
 ENV ROOT_CA_CERT=/usr/local/share/ca-certificates/root-ca.crt
 
+EXPOSE $PORT
 CMD ["node", "app.js"]

@@ -1,9 +1,10 @@
 const express = require('express')
+const axios = require('axios')
 const passport = require('passport')
 const session = require('express-session')
 const SteamStrategy = require('passport-steam').Strategy;
 
-const {axios, instance} = require('./configure_https_agent');
+const {instance} = require('./configure_https_agent');
 
 // TODO: THIS IS STILL A CRUDE IMPLEMENTATION OF 
 // STEAM ACCOUNT LINK
@@ -11,14 +12,6 @@ const {axios, instance} = require('./configure_https_agent');
 const SYNC_ENDPOINT_HOST = 'localhost:3000/v1/games'
 const LINK_ENDPOINT_HOST = `localhost:3000/v1/account`
 
-
-
-// TODO: Handle certificate
-const httpsAgent = new https.Agent({
-  cert: fs.readFileSync(CERT_FILE),
-  key: fs.readFileSync(KEY_FILE),
-  ca: fs.readFileSync(ROOT_CA),
-});
 
 
 async function getSteamOwnedGames(steamID) {
@@ -99,8 +92,8 @@ const configurePassport = (req, res, next) => {
   const { failRedirect, successRedirect } = req.query;
 
   passport.use(new SteamStrategy({
-    returnURL: `http://localhost:3000/middleware/steam/return/${username}?failureRedirect=${failRedirect}&successRedirect=${successRedirect}`,
-    realm: 'http://localhost:3000/',
+    returnURL: `http://localhost:9000/middleware/steam/return/${username}?failureRedirect=${failRedirect}&successRedirect=${successRedirect}`,
+    realm: 'http://localhost:9000/',
     profile: false,
   },
   function(identifier, profile, done) {
@@ -127,6 +120,11 @@ app.get('/middleware/steam/:username',
     res.redirect('/');
   });
 
+const sleep = (ms) => {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+
 // GET /auth/steam/return
 //   Use passport.authenticate() as route middleware to authenticate the
 //   request.  If authentication fails, the user will be redirected back to the
@@ -136,6 +134,8 @@ app.get('/middleware/steam/return/:username',
   passport.authenticate('steam', { failureRedirect: '/' }),
   async function(req, res) {
     console.log(req.params.username);
+
+    const {username} = req.params
 
     const { failRedirect, successRedirect } = req.query;
 
@@ -161,45 +161,46 @@ app.get('/middleware/steam/return/:username',
     console.log(data);
 
     // link steam account
-    let resp = instance.post(`https://${LINK_ENDPOINT_HOST}/${username}/steam`, 
-    {
-      steamid: id
-    }, 
-    {
-      headers: {
-        'Content-Type':'application/json',
-      }
-    });
+    try {
+      resp = await instance.post(`http://${LINK_ENDPOINT_HOST}/${username}/steam`, 
+        {
+          steamid: id
+        }, 
+        {
+          headers: {
+            'Content-Type':'application/json',
+          }
+        });
 
-    console.log(resp.data.response);
-    
-    if (resp.status != 200) {
-      // res.redirect(failRedirect);
-      return;
+      console.log(resp.data);
+    } catch (error) {
+      // failure redirect
+      console.log(error.response.data);
+      console.log(error.response.status);
+      return
     }
-
 
     // sync games
-    resp = await instance.post(`https://${SYNC_ENDPOINT_HOST}/${username}/sync`, 
-    {
-      games: data,
-    }, 
-    {
-      headers: {
-        'Content-Type':'application/json',
-      }
-    }); 
+    try {
+      resp = await instance.post(`http://${SYNC_ENDPOINT_HOST}/${username}/sync`, 
+      data, 
+      {
+        headers: {
+          'Content-Type':'application/json',
+        }
+      }); 
 
-    if (resp.status != 200) {
-      resp = await instance.delete(`https://${LINK_ENDPOINT_HOST}/${username}/steam`);
-      // res.redirect(failRedirect);
+      console.log(resp.data)
+    } catch (error) {
+      console.log(error.response.data);
+      console.log(error.response.status);
+      // rollback steam link
+      resp = await instance.delete(`http://${LINK_ENDPOINT_HOST}/${username}/steam`)
+      return
     }
-
-
-    const res = instance.post('')
-    // res.redirect(successRedirect);
 });
 
   
-
-app.listen(3000);
+port = process.env.port || 9000
+app.listen(9000, '0.0.0.0');
+console.log(`Middleware is running on port 0.0.0.0:${port}`)
