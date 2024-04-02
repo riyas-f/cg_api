@@ -19,6 +19,7 @@ import (
 	"github.com/AdityaP1502/Instant-Messanging/api/service/account/pwdutil"
 	"github.com/gorilla/mux"
 	"github.com/jmoiron/sqlx"
+	"github.com/rs/cors"
 )
 
 var querynator = &database.Querynator{}
@@ -616,47 +617,90 @@ func SetAccountRoute(r *mux.Router, db *sql.DB, config *config.Config) {
 	}
 
 	// REGISTER ROUTE //
-	register := &httpx.Handler{
-		DB:      db,
-		Config:  config,
-		Handler: registerHandler,
-	}
+	register := httpx.CreateHTTPHandler(db, config, registerHandler, &cors.Options{
+		AllowedOrigins:   []string{"*"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
+		AllowedHeaders:   []string{"Content-Type", "Authorization"},
+		ExposedHeaders:   []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           86400, // time in seconds
+	})
 
 	subrouter.Handle("/register", middleware.UseMiddleware(db, config, register, userPayloadMiddleware)).Methods("POST")
 
 	// VERIFY OTP ROUTE //
-	verifyOTP := &httpx.Handler{
-		DB:      db,
-		Config:  config,
-		Handler: verifyOTPHandler,
-	}
+	// verifyOTP := &httpx.Handler{
+	// 	DB:      db,
+	// 	Config:  config,
+	// 	Handler: verifyOTPHandler,
+	// }
 
+	verifyOTP := httpx.CreateHTTPHandler(db, config, verifyOTPHandler, &cors.Options{
+		AllowedOrigins:   []string{"*"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
+		AllowedHeaders:   []string{"Content-Type", "Authorization"},
+		ExposedHeaders:   []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           86400, // time in seconds
+	})
 	subrouter.Handle("/otp/verify", middleware.UseMiddleware(db, config, verifyOTP, otpPayloadMiddleware)).Methods("POST")
 
 	// RESEND OTP ROUTE //
-	resendOTP := &httpx.Handler{
-		DB:      db,
-		Config:  config,
-		Handler: resendOTPHandler,
-	}
+	// resendOTP := &httpx.Handler{
+	// 	DB:      db,
+	// 	Config:  config,
+	// 	Handler: resendOTPHandler,
+	// }
 
+	resendOTP := httpx.CreateHTTPHandler(db, config, resendOTPHandler, &cors.Options{
+		AllowedOrigins:   []string{"*"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
+		AllowedHeaders:   []string{"Content-Type", "Authorization"},
+		ExposedHeaders:   []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           86400, // time in seconds
+	})
 	subrouter.Handle("/otp/send", middleware.UseMiddleware(db, config, resendOTP, otpResendPayloadMiddleware)).Methods("POST")
 
 	// LOGIN ROUTE //
-	login := &httpx.Handler{
-		DB:      db,
-		Config:  config,
-		Handler: loginHandler,
-	}
+	// login := &httpx.Handler{
+	// 	DB:      db,
+	// 	Config:  config,
+	// 	Handler: loginHandler,
+	// }
+
+	login := httpx.CreateHTTPHandler(db, config, loginHandler, &cors.Options{
+		AllowedOrigins:   []string{"*"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
+		AllowedHeaders:   []string{"Content-Type", "Authorization"},
+		ExposedHeaders:   []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           86400, // time in seconds
+	})
 
 	subrouter.Handle("/login", middleware.UseMiddleware(db, config, login, loginPayloadMIddleware)).Methods("POST")
 
-	linkSteamId := httpx.CreateHTTPHandler(db, config, linkSteamAccountHandler)
+	linkSteamId := httpx.CreateHTTPHandler(db, config, linkSteamAccountHandler, &cors.Options{
+		AllowedOrigins:   []string{"*"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
+		AllowedHeaders:   []string{"Content-Type", "Authorization"},
+		ExposedHeaders:   []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           86400, // time in seconds
+	})
 	subrouter.Handle("/{username}/steam", middleware.UseMiddleware(db, config, linkSteamId, certMiddleware, linkSteamPayloadMiddleware)).Methods("POST")
 
-	getSteamId := httpx.CreateHTTPHandler(db, config, getUserSteamID)
+	getSteamId := httpx.CreateHTTPHandler(db, config, getUserSteamID, &cors.Options{
+		AllowedOrigins:   []string{"*"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
+		AllowedHeaders:   []string{"Content-Type", "Authorization"},
+		ExposedHeaders:   []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           86400, // time in secondsk
+	})
 	subrouter.Handle("/{username}/steam", getSteamId).Methods("GET")
 
 	// subrouter.HandleFunc("/logout", logOutHandler).Methods("POST")
 	// subrouter.HandleFunc("/{username}", patchUserInfoHandler).Methods("PATCH")
+
 }
