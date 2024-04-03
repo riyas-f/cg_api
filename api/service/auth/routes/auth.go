@@ -228,14 +228,7 @@ func SetAuthRoute(r *mux.Router, db *sql.DB, conf *config.Config) {
 	// 	Handler: httpx.HandlerLogic(RefreshTokenHandler),
 	// }
 
-	refreshToken := httpx.CreateHTTPHandler(db, conf, RefreshTokenHandler, &cors.Options{
-		AllowedOrigins:   []string{"*"},
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
-		AllowedHeaders:   []string{"Content-Type", "Authorization"},
-		ExposedHeaders:   []string{"Content-Length"},
-		AllowCredentials: true,
-		MaxAge:           86400, // time in seconds
-	})
+	refreshToken := httpx.CreateHTTPHandler(db, conf, RefreshTokenHandler)
 
 	verifyToken := &httpx.Handler{
 		DB:      db,
@@ -249,9 +242,17 @@ func SetAuthRoute(r *mux.Router, db *sql.DB, conf *config.Config) {
 		Handler: httpx.HandlerLogic(RevokeTokenHandler),
 	}
 
-	subrouter.Handle("/token/issue", middleware.UseMiddleware(db, conf, issueToken, certMiddleware, credentialsPayloadMiddleware))
-	subrouter.Handle("/token/refresh", middleware.UseMiddleware(db, conf, refreshToken, refreshpayloadMiddleware))
-	subrouter.Handle("/token/verify", middleware.UseMiddleware(db, conf, verifyToken, certMiddleware, accesspayloadMiddleware))
-	subrouter.Handle("/token/revoke", middleware.UseMiddleware(db, conf, revokeToken, certMiddleware, revokepayloadMiddleware))
+	subrouter.Handle("/token/issue", middleware.UseMiddleware(db, conf, issueToken, nil, certMiddleware, credentialsPayloadMiddleware))
+	subrouter.Handle("/token/refresh", middleware.UseMiddleware(db, conf, refreshToken,
+		&cors.Options{AllowedOrigins: []string{"*"},
+			AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
+			AllowedHeaders:   []string{"Content-Type", "Authorization"},
+			ExposedHeaders:   []string{"Content-Length"},
+			AllowCredentials: true,
+			MaxAge:           86400, // time in seconds
+		},
+		refreshpayloadMiddleware)).Methods("POST")
+	subrouter.Handle("/token/verify", middleware.UseMiddleware(db, conf, verifyToken, nil, certMiddleware, accesspayloadMiddleware))
+	subrouter.Handle("/token/revoke", middleware.UseMiddleware(db, conf, revokeToken, nil, certMiddleware, revokepayloadMiddleware))
 
 }
