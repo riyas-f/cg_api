@@ -4,6 +4,7 @@ import (
 	"crypto/x509"
 	"database/sql"
 	"encoding/base64"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -14,6 +15,10 @@ import (
 func CertMiddleware(rootCACerts *x509.CertPool) Middleware {
 	return func(next http.Handler, db *sql.DB, conf interface{}) http.Handler {
 		fn := func(db *sql.DB, conf interface{}, w http.ResponseWriter, r *http.Request) responseerror.HTTPCustomError {
+			if r.TLS == nil {
+				fmt.Println("restricted route called without TLS")
+			}
+
 			if r.TLS != nil && len(r.TLS.PeerCertificates) > 0 {
 				next.ServeHTTP(w, r)
 			}
