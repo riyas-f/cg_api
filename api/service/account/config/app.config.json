@@ -1,0 +1,34 @@
+{
+    "service_name": "Instant-Messaging Account Service",
+    "version": "v1",
+    "database": {
+        "driver": "postgres",
+        "host": "db-account",
+        "port": "5432"
+    },
+
+    "server": {
+        "host": "0.0.0.0",
+        "port": "8000",
+        "secure": "true"
+    },
+        
+    "services": {
+        "auth": {
+            "host": "auth",
+            "port": "6000",
+            "scheme": "https"
+        },
+
+        "mail": {
+            "host": "mail",
+            "port": "4000",
+            "scheme": "http"
+        }
+    },
+
+    "otp": {
+        "resendDurationMinutes": "2",
+        "otpDurationMinutes": "5"
+    }
+}
