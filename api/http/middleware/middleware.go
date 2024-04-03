@@ -16,5 +16,11 @@ func UseMiddleware(db *sql.DB, conf interface{}, handler http.Handler, middlewar
 		chained = middlewares[i](chained, db, conf)
 	}
 
+	// append cors middleware into the chain
+	// if corsOptions != nil {
+	// 	fmt.Println(*corsOptions)
+	// 	chained = cors.New(*corsOptions).Handler(chained)
+	// }
+
 	return chained
 }
