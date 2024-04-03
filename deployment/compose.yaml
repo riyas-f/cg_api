@@ -5,6 +5,9 @@ services:
       dockerfile: Dockerfile
       args:
         - PORT=3000
+        - CSR_FILE_PATH=cert/request.csr
+        - CERT_FILE_PATH=cert/proxy-service.cert
+        - PRIVATE_KEY_PATH=cert/proxy-service.key
         - PKI_HOST=localhost:5500
       target: final
       network: host
@@ -14,7 +17,7 @@ services:
       - internal
       - public
     healthcheck:
-      test: curl --fail http://proxy:3000/health || exit 1
+      test: curl -k --fail https://proxy:3000/health || exit 1
       interval: 60s
       timeout: 30s
       retries: 5
@@ -101,12 +104,18 @@ services:
       context: "../middleware/steam-openid/"
       args:
         - PORT=7000
-        - SERVICE_NAME=steam-middleware
+        - SERVICE_NAME=steam-openid
         - CSR_FILE_PATH=cert/request.csr
         - CERT_FILE_PATH=cert/steam-middleware.cert
         - PRIVATE_KEY_PATH=cert/steam-middleware.key
         - PKI_HOST=localhost:5500
       network: host
+    environment:
+      - STEAM_API_KEY_FILE=/run/secrets/steam_api_key
+    secrets:
+       - steam_api_key
+    # middleware/steam-openid/scripts/compose-entrypoint.sh
+    entrypoint: "./scripts/compose-entrypoint.sh"
     ports:
       - "7000:7000"
     networks:
@@ -152,3 +161,7 @@ networks:
   internal: {}
   public: 
     driver: bridge
+
+secrets:
+  steam_api_key:
+    file: '../middleware/steam-openid/secrets/steam_api_key.txt'
