@@ -22,7 +22,7 @@ CREATE TABLE account(
 	password VARCHAR(80) NOT NULL,
     password_salt VARCHAR(64) NOT NULL,
 	email VARCHAR(64) NOT NULL,
-	steamid VARCHAR(64),
+	steamid VARCHAR(64) NOT NULL,
 	is_active VARCHAR(6) NOT NULL
 );
 
