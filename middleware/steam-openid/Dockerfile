@@ -25,6 +25,7 @@ WORKDIR /app
 
 # create cert key
 COPY scripts/create_cert_key.sh scripts/create_cert_key.sh
+RUN chmod +x scripts/create_cert_key.sh
 RUN scripts/create_cert_key.sh
 
 # copy the application code into

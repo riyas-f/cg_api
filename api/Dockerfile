@@ -18,6 +18,7 @@ RUN apk update && \
 WORKDIR /github.com/AdityaP1502/Instant-Messanging/api/
 COPY . .
 
+RUN chmod +x scripts/create_cert_key.sh
 RUN scripts/create_cert_key.sh
 
 RUN go mod download

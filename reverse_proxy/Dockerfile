@@ -16,6 +16,7 @@ COPY go.sum .
 RUN go mod download
 
 COPY scripts/create_cert_key.sh scripts/create_cert_key.sh
+RUN chmod +x scripts/create_cert_key.sh
 RUN scripts/create_cert_key.sh
 
 COPY . .

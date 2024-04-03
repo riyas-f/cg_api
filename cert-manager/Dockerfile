@@ -12,6 +12,7 @@ RUN apk update && \
 
 WORKDIR /github.com/AdityaP1502/Instant-Messanging/cert_manager
 COPY . .
+RUN chmod +x scripts/init_key_cert.sh
 RUN scripts/init_key_cert.sh
 
 RUN go mod download
