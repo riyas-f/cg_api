@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/base64"
 	"encoding/pem"
 	"fmt"
@@ -8,11 +10,68 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"os"
+	"strings"
 	"sync"
 
 	"github.com/AdityaP1502/Instant-Messanging/reverse_proxy/config"
 	"github.com/gorilla/mux"
+	"github.com/youmark/pkcs8"
 )
+
+var (
+	PASSPHRASE       = "PASSPHRASE_PATH"
+	CERT_FILE_PATH   = "CERT_FILE_PATH"
+	PRIVATE_KEY_PATH = "PRIVATE_KEY_PATH"
+	ROOT_CA_CERT     = "ROOT_CA_CERT"
+)
+
+func LoadCertificate(certPath string, privateKeyPath string, passPath string) (*x509.Certificate, interface{}) {
+	pw, err := os.ReadFile(passPath)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	publicKeyFile, err := os.ReadFile(certPath)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	pemBlock, _ := pem.Decode(publicKeyFile)
+
+	if pemBlock == nil {
+		log.Fatal("pem decode failed")
+	}
+
+	cert, err := x509.ParseCertificate(
+		pemBlock.Bytes,
+	)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	privateKeyFile, err := os.ReadFile(privateKeyPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	pemBlock, _ = pem.Decode(privateKeyFile)
+
+	if pemBlock == nil {
+		log.Fatal("pem decode failed")
+	}
+
+	privateKey, err := pkcs8.ParsePKCS8PrivateKey(pemBlock.Bytes, pw)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return cert, privateKey
+}
 
 func ForwardClientCertMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -150,6 +209,39 @@ func main() {
 
 	go func() {
 		defer wg.Done()
+
+		if strings.ToLower(config.Server.Secure) == "true" {
+			passphrasePath := os.Getenv(PASSPHRASE)
+
+			if passphrasePath == "" {
+				passphrasePath = "/tmp/passphrase"
+			}
+
+			cert, pKey := LoadCertificate(
+				os.Getenv(CERT_FILE_PATH),
+				os.Getenv(PRIVATE_KEY_PATH),
+				passphrasePath,
+			)
+			// inbound tls config (from proxy)
+			tlsConfig := &tls.Config{
+				Certificates: []tls.Certificate{
+					{
+						Certificate: [][]byte{cert.Raw},
+						PrivateKey:  pKey,
+					},
+				},
+				MinVersion: tls.VersionTLS10,
+			}
+
+			srv := http.Server{
+				Addr:      fmt.Sprintf("%s:%d", config.Server.Host, config.Server.Port),
+				Handler:   r,
+				TLSConfig: tlsConfig,
+			}
+
+			srv.ListenAndServeTLS("", "")
+			return
+		}
 		http.ListenAndServe(
 			fmt.Sprintf("%s:%d", config.Server.Host, config.Server.Port),
 			r,
