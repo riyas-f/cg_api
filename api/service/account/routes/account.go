@@ -510,7 +510,7 @@ func linkSteamAccountHandler(db *sql.DB, _ interface{}, w http.ResponseWriter, r
 		return responseerror.CreateInternalServiceError(err)
 	}
 
-	if user.SteamID != "" {
+	if user.SteamID != "not_linked" {
 		return responseerror.CreateBadRequestError(
 			responseerror.SteamAlreadyLinked,
 			responseerror.SteamAlreadyLinkedMessage,
@@ -574,7 +574,7 @@ func rollbackSteamLinkHandler(db *sql.DB, _ interface{}, w http.ResponseWriter, 
 		return responseerror.CreateInternalServiceError(err)
 	}
 
-	err = querynator.UpdateUsingColumnNames([]string{"steamid"}, []any{""}, []string{"username"}, []any{username}, tx, "account")
+	err = querynator.UpdateUsingColumnNames([]string{"steamid"}, []any{"not_linked"}, []string{"username"}, []any{username}, tx, "account")
 	// err = querynator.Update(&payload.Account{SteamID: ""}, []string{"username"}, []any{username}, tx, "account")
 
 	if err != nil {
@@ -620,7 +620,7 @@ func getUserSteamIDHandler(db *sql.DB, _ interface{}, w http.ResponseWriter, r *
 		return responseerror.CreateInternalServiceError(err)
 	}
 
-	if user.SteamID == "" {
+	if user.SteamID == "not_linked" {
 		return responseerror.CreateBadRequestError(
 			responseerror.SteamNotLinked,
 			responseerror.SteamNotLinkedMessage,
