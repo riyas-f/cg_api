@@ -2,7 +2,6 @@ package httputil
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"reflect"
 	"strings"
@@ -43,7 +42,6 @@ func CheckParametersUnity(v interface{}, requiredField []string) responseerror.H
 		v := s.FieldByName(field)
 		if v.IsValid() {
 			// check if a field is empty
-			fmt.Println(v.Type().Kind() == reflect.Slice)
 			if v.Type().Kind() == reflect.Slice {
 				if v.Len() == 0 {
 					f, _ := typeS.FieldByName(field)
