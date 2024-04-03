@@ -4,6 +4,7 @@ import (
 	"crypto/x509"
 	"database/sql"
 	"encoding/base64"
+	"encoding/pem"
 	"fmt"
 	"net/http"
 	"time"
@@ -25,12 +26,17 @@ func CertMiddleware(rootCACerts *x509.CertPool) Middleware {
 
 			// client request is being redirected by the proxy
 			if x := r.Header.Get("x-client-cert"); r.TLS != nil && x != "" {
-				certBytes, err := base64.StdEncoding.DecodeString(x)
+				pemBytes, err := base64.StdEncoding.DecodeString(x)
 				if err != nil {
 					return responseerror.CreateInternalServiceError(err)
 				}
 
-				cert, err := x509.ParseCertificate(certBytes)
+				pemBlock, _ := pem.Decode(pemBytes)
+				if pemBlock == nil {
+					return responseerror.CreateInternalServiceError(err)
+				}
+
+				cert, err := x509.ParseCertificate(pemBlock.Bytes)
 
 				if err != nil {
 					return responseerror.CreateInternalServiceError(err)
@@ -49,6 +55,7 @@ func CertMiddleware(rootCACerts *x509.CertPool) Middleware {
 
 				if len(chains) > 0 {
 					next.ServeHTTP(w, r)
+					return nil
 				}
 
 			}
