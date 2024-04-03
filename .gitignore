@@ -37,7 +37,8 @@ Client/process/doodle/*
 *.txt
 *.csv
 *.env
-**/app.config.json
+**.json
+!app.config.json
 
 # go binary 
 **/bin/
