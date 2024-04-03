@@ -61,3 +61,7 @@ cert
 
 **/env
 **/site
+
+
+# don't include any secrets text file
+**/secrets
