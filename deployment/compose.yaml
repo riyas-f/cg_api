@@ -40,6 +40,13 @@ services:
     networks:
       - auth
       - internal
+    environment:
+      - DB_USER=test
+      - DB_PASSWORD_FILE=/run/secrets/db-auth-secret
+      - DB_DATABASE=auth-db
+    entrypoint: ./scripts/compose-entrypoint.sh
+    secrets:
+      - db-auth-secret
     depends_on:
       db-auth:
         condition: service_healthy
@@ -63,6 +70,13 @@ services:
     networks:
       - account
       - internal
+    environment:
+      - DB_USER=test
+      - DB_PASSWORD_FILE=/run/secrets/db-account-secret
+      - DB_DATABASE=account-db
+    entrypoint: ./scripts/compose-entrypoint.sh
+    secrets:
+      - db-account-secret
     depends_on:
       db-account:
         condition: service_healthy
@@ -86,6 +100,13 @@ services:
     networks:
       - games
       - internal
+    environment:
+      - DB_USER=test
+      - DB_PASSWORD_FILE=/run/secrets/db-games-secret
+      - DB_DATABASE=games-db
+    entrypoint: ./scripts/compose-entrypoint.sh
+    secrets:
+      - db-games-secret
     depends_on:
       db-games:
         condition: service_healthy
@@ -133,7 +154,7 @@ services:
       - DB_PASSWORD_FILE=/run/secrets/db-account-secret
     secrets:
       - db-account-secret
-    entrypoint: ./db/postgres-compose-entrypoint.sh
+    entrypoint: ./scripts/postgres-entrypoint.sh
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "test"]
       timeout: 20s
@@ -149,7 +170,7 @@ services:
       - DB_PASSWORD_FILE=/run/secrets/db-auth-secret
     secrets:
       - db-auth-secret
-    entrypoint: ./db/postgres-compose-entrypoint.sh
+    entrypoint: ./scripts/postgres-entrypoint.sh
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "test"]
       timeout: 20s
@@ -166,7 +187,7 @@ services:
       - DB_PASSWORD_FILE=/run/secrets/db-games-secret
     secrets:
       - db-games-secret
-    entrypoint: ./db/postgres-compose-entrypoint.sh
+    entrypoint: ./scripts/postgres-entrypoint.sh
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "test"]
       timeout: 20s
