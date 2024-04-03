@@ -69,6 +69,7 @@ func NewRegisteredAccountPayload(username string, name string, email string, pas
 		Name:     name,
 		Password: hash,
 		Salt:     salt,
+		SteamID:  "not_linked",
 		IsActive: strconv.FormatBool(false),
 	}, nil
 }
