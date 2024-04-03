@@ -44,9 +44,12 @@ services:
       - DB_USER=test
       - DB_PASSWORD_FILE=/run/secrets/db-auth-secret
       - DB_DATABASE=auth-db
+      - JWT_SECRET_KEY_FILE=/run/secrtes/jwt-secret-key
     entrypoint: ./scripts/compose-entrypoint.sh
     secrets:
       - db-auth-secret
+      - jwt-secret-key
+      
     depends_on:
       db-auth:
         condition: service_healthy
@@ -74,9 +77,11 @@ services:
       - DB_USER=test
       - DB_PASSWORD_FILE=/run/secrets/db-account-secret
       - DB_DATABASE=account-db
+      - HASH_SECRET_KEY_FILE=/run/secrets/password-hash-key
     entrypoint: ./scripts/compose-entrypoint.sh
     secrets:
       - db-account-secret
+      - password-hash-key
     depends_on:
       db-account:
         condition: service_healthy
@@ -104,11 +109,9 @@ services:
       - DB_USER=test
       - DB_PASSWORD_FILE=/run/secrets/db-games-secret
       - DB_DATABASE=games-db
-      - HASH_SECRET_KEY_FILE=/run/secrets/password-hash-key
     entrypoint: ./scripts/compose-entrypoint.sh
     secrets:
       - db-games-secret
-      - password-hash-key
     depends_on:
       db-games:
         condition: service_healthy
@@ -159,7 +162,7 @@ services:
       - DB_PASSWORD_FILE=/run/secrets/db-account-secret
     secrets:
       - db-account-secret
-    entrypoint: ./scripts/postgres-entrypoint.sh
+    entrypoint: /scripts/postgres-entrypoint.sh
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "test"]
       timeout: 20s
@@ -178,7 +181,7 @@ services:
       - DB_PASSWORD_FILE=/run/secrets/db-auth-secret
     secrets:
       - db-auth-secret
-    entrypoint: ./scripts/postgres-entrypoint.sh
+    entrypoint: /scripts/postgres-entrypoint.sh
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "test"]
       timeout: 20s
@@ -198,7 +201,7 @@ services:
       - DB_PASSWORD_FILE=/run/secrets/db-games-secret
     secrets:
       - db-games-secret
-    entrypoint: ./scripts/postgres-entrypoint.sh
+    entrypoint: /scripts/postgres-entrypoint.sh
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "test"]
       timeout: 20s
