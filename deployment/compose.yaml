@@ -104,9 +104,11 @@ services:
       - DB_USER=test
       - DB_PASSWORD_FILE=/run/secrets/db-games-secret
       - DB_DATABASE=games-db
+      - HASH_SECRET_KEY_FILE=/run/secrets/password-hash-key
     entrypoint: ./scripts/compose-entrypoint.sh
     secrets:
       - db-games-secret
+      - password-hash-key
     depends_on:
       db-games:
         condition: service_healthy
@@ -211,11 +213,15 @@ networks:
     driver: bridge
 
 secrets:
+  password-hash-key:
+    file: '../api/secrets/password_hash_key.txt'
+  jwt-secret-key:
+    file: '../api/secrets/jwt_secret_key.txt'
   db-account-secret:
-    file: './db/secret/db_account_password.txt'
+    file: './db/secrets/db_account_password.txt'
   db-auth-secret:
-    file: './db/secret/db_auth_password.txt'
+    file: './db/secrets/db_auth_password.txt'
   db-games-secret:
-    file: './db/secret/db_games_password.txt'
+    file: './db/secrets/db_games_password.txt'
   steam_api_key:
     file: '../middleware/steam-openid/secrets/steam_api_key.txt'
