@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"database/sql"
+	"fmt"
 	"net/http"
 
 	"github.com/rs/cors"
@@ -20,6 +21,7 @@ func UseMiddleware(db *sql.DB, conf interface{}, handler http.Handler, corsOptio
 
 	// append cors middleware into the chain
 	if corsOptions != nil {
+		fmt.Println(*corsOptions)
 		chained = cors.New(*corsOptions).Handler(chained)
 	}
 
