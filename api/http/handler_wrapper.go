@@ -7,7 +7,6 @@ import (
 
 	"github.com/AdityaP1502/Instant-Messanging/api/http/responseerror"
 	"github.com/AdityaP1502/Instant-Messanging/api/jsonutil"
-	"github.com/rs/cors"
 )
 
 type HandlerLogic func(db *sql.DB, conf interface{}, w http.ResponseWriter, r *http.Request) responseerror.HTTPCustomError
@@ -47,18 +46,18 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func CreateHTTPHandler(db *sql.DB, conf interface{}, logic HandlerLogic, corsOptions *cors.Options) http.Handler {
+func CreateHTTPHandler(db *sql.DB, conf interface{}, logic HandlerLogic) http.Handler {
 	handler := &Handler{
 		DB:      db,
 		Config:  conf,
 		Handler: logic,
 	}
 
-	if corsOptions != nil {
-		// add cors into the hadnler if provided non nil options
-		corsHandler := cors.New(*corsOptions).Handler(handler)
-		return corsHandler
-	}
+	// if corsOptions != nil {
+	// 	// add cors into the hadnler if provided non nil options
+	// 	corsHandler := cors.New(*corsOptions).Handler(handler)
+	// 	return corsHandler
+	// }
 
 	return handler
 }
