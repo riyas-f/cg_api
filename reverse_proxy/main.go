@@ -26,6 +26,21 @@ var (
 	ROOT_CA_CERT     = "ROOT_CA_CERT"
 )
 
+func LoadRootCACertPool(rootCAPath string) *x509.CertPool {
+	fmt.Printf("loading ca cert from : %s\n", rootCAPath)
+
+	rootCA, err := os.ReadFile(rootCAPath)
+
+	if err != nil {
+		panic(err)
+	}
+
+	certPool := x509.NewCertPool()
+	certPool.AppendCertsFromPEM(rootCA)
+	return certPool
+
+}
+
 func LoadCertificate(certPath string, privateKeyPath string, passPath string) (*x509.Certificate, interface{}) {
 	pw, err := os.ReadFile(passPath)
 
@@ -84,7 +99,7 @@ func ForwardClientCertMiddleware(next http.Handler) http.Handler {
 			certBytes := pem.EncodeToMemory(block)
 			encodedCert := base64.StdEncoding.EncodeToString(certBytes)
 
-			r.Header.Add("x-client-cert", encodedCert)
+			r.Header.Set("x-client-cert", encodedCert)
 		}
 
 		next.ServeHTTP(w, r)
@@ -190,6 +205,7 @@ func main() {
 			r.Header.Set("X-Forwarded-Host", r.Header.Get("Host"))
 			r.Host = url.Host
 
+			fmt.Println(r.Header)
 			proxy.ServeHTTP(w, r)
 		})
 
@@ -199,6 +215,7 @@ func main() {
 			r.Header.Set("X-Forwarded-Host", r.Header.Get("Host"))
 			r.Host = url.Host
 
+			fmt.Println(r.Header)
 			proxy.ServeHTTP(w, r)
 		})
 	}
@@ -209,6 +226,7 @@ func main() {
 
 	go func() {
 		defer wg.Done()
+		rootCAPool := LoadRootCACertPool(os.Getenv(ROOT_CA_CERT))
 
 		if strings.ToLower(config.Server.Secure) == "true" {
 			passphrasePath := os.Getenv(PASSPHRASE)
@@ -230,7 +248,9 @@ func main() {
 						PrivateKey:  pKey,
 					},
 				},
+				ClientCAs:  rootCAPool,
 				MinVersion: tls.VersionTLS10,
+				ClientAuth: tls.VerifyClientCertIfGiven,
 			}
 
 			srv := http.Server{
