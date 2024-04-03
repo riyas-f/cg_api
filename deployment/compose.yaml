@@ -122,6 +122,13 @@ services:
     build: "../middleware/mail/"
     ports:
       - "4000"
+    environment:
+      - PORT=4000
+      - SMTP_CONFIG_NAME=SOME COMPANY
+      - SMTP_CONFIG_EMAIL=adityapt.01@gmail.com
+      - SMTP_PASSWORD_FILE=/run/secrets/smtp_password
+    secrets:
+      - smtp_password
     networks:
       - internal
 
@@ -226,5 +233,7 @@ secrets:
     file: './db/secrets/db_auth_password.txt'
   db-games-secret:
     file: './db/secrets/db_games_password.txt'
+  smtp_password:
+    file: '../middleware/mail/secrets/smtp_password.txt'
   steam_api_key:
     file: '../middleware/steam-openid/secrets/steam_api_key.txt'
