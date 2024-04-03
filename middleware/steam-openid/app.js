@@ -1,5 +1,6 @@
 const express = require('express')
 const axios = require('axios')
+const url = require('url')
 const passport = require('passport')
 const session = require('express-session')
 const SteamStrategy = require('passport-steam').Strategy;
@@ -9,11 +10,14 @@ const {instance} = require('./configure_https_agent');
 // TODO: THIS IS STILL A CRUDE IMPLEMENTATION OF 
 // STEAM ACCOUNT LINK
 
-const SYNC_ENDPOINT_HOST = 'proxy:3000/v1/games'
-const LINK_ENDPOINT_HOST = `proxy:3000/v1/account`
+const SYNC_ENDPOINT_HOST = 'https://proxy:3000/v1/games'
+const LINK_ENDPOINT_HOST = `https://proxy:3000/v1/account`
 
 const port = process.env.port || 9000
 const host = process.env.host || 'localhost'
+
+const BASE_FAIL_REDIRECT = `/middleware/steam/link`
+const BASE_SUCCESS_REDIRECT = '/middleware/steam/link'
 
 if (process.env.STEAM_API_KEY == '') {
   console.log('Steam Api Key env var is not set. Exiting...')
@@ -26,12 +30,15 @@ function checkAxiosError(error) {
     // Response not on the type 2xx
     console.log(error.response.data)
     console.log(error.response.status)
+
   } else if (error.request) {
     // Request was amde but no response was received
     console.log(error.request)
+
   } else {
     // something bad happened when setting up the request
     console.log(`Error: ${error.message}`)
+
   }
 }
 
@@ -86,6 +93,17 @@ passport.deserializeUser(function(obj, done) {
 
 var app = express();
 
+app.get('/middleware/steam/link', (req, res) => {
+  const { status, message } = req.query;
+
+  if (status == '1') {
+    res.send({status: "ok", "message":"steam linked successfully"});
+    return
+  } 
+
+  res.send({status: "fail", "message": message});
+})
+
 // configure Express
 app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');
@@ -110,7 +128,7 @@ app.use(express.static(__dirname + '/../../public'));
 
 const configurePassport = (req, res, next) => {
   const { username } = req.params;
-  const { failRedirect, successRedirect } = req.query;
+  const { failRedirect = BASE_FAIL_REDIRECT, successRedirect = BASE_SUCCESS_REDIRECT } = req.query;
 
   passport.use(new SteamStrategy({
     returnURL: `http://${host}:${port}/middleware/steam/return/${username}?failureRedirect=${failRedirect}&successRedirect=${successRedirect}`,
@@ -153,14 +171,17 @@ app.get('/middleware/steam/return/:username',
 
     const {username} = req.params
 
-    const { failRedirect, successRedirect } = req.query;
+    const { failRedirect = BASE_FAIL_REDIRECT, successRedirect = BASE_SUCCESS_REDIRECT } = req.query;
 
+    console.log(failRedirect)
+    console.log(successRedirect)
+    
     splitStr = req.user.identifier.split("/");
     id = splitStr[splitStr.length - 1];
 
     // link steam account
     try {
-      resp = await instance.post(`http://${LINK_ENDPOINT_HOST}/${username}/steam`, 
+      resp = await instance.post(`${LINK_ENDPOINT_HOST}/${username}/steam`, 
         {
           steamid: id
         }, 
@@ -173,6 +194,22 @@ app.get('/middleware/steam/return/:username',
       console.log(resp.data);
     } catch (error) {
       checkAxiosError(error);
+
+      let message = "failed to connect"
+
+      if (error.response) {
+        message = error.response.data.message
+      }
+
+      res.redirect(url.format(
+        {
+          pathname: failRedirect, 
+          query: {
+            status: '0',
+            message: message,
+          }
+        }
+      ))
       return;
     }
 
@@ -194,7 +231,7 @@ app.get('/middleware/steam/return/:username',
 
       console.log(data);
 
-      resp = await instance.post(`http://${SYNC_ENDPOINT_HOST}/${username}/sync`, 
+      resp = await instance.post(`${SYNC_ENDPOINT_HOST}/${username}/sync`, 
       data, 
       {
         headers: {
@@ -207,12 +244,39 @@ app.get('/middleware/steam/return/:username',
     } catch (error) {
       // TODO: redirect url
       checkAxiosError(error);
-      resp = await instance.delete(`http://${LINK_ENDPOINT_HOST}/${username}/steam`)
+
+      let message = "failed to connect"
+      
+      if (error.response) {
+        message = error.response.data.message
+      }
+
+      resp = await instance.delete(`${LINK_ENDPOINT_HOST}/${username}/steam`);
+      
+      res.redirect(url.format(
+        {
+          pathname: failRedirect, 
+          query: {
+            status: '0',
+            message: message,
+          }
+        }
+      ))
+
       return;
     }
     
+    res.status(301).redirect(url.format(
+      {
+        host: `http://${host}:${port}`,
+        pathname: successRedirect, 
+        query: {
+          status: '1'
+        }
+      }
+    ))
 
-    return;
+   return;
 });
 
   
