@@ -51,6 +51,7 @@ local/
 
 # don't ignore init.sql
 !init.sql
+!*-init.sql
 
 # private key and certificate
 cert
