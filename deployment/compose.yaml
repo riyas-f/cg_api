@@ -144,7 +144,10 @@ services:
       - public
 
   db-account:
-    build: "./db/account/"
+    build:
+      context: "./db/"
+      args:
+        - SERVICE_NAME=account
     ports:
       - "5432"
     networks:
@@ -160,7 +163,10 @@ services:
       timeout: 20s
       retries: 10
   db-auth:
-    build: "./db/auth/"
+    build:
+      context: "./db/"
+      args:
+        - SERVICE_NAME=auth
     ports:
       - "5432"
     networks:
@@ -177,7 +183,10 @@ services:
       retries: 10
 
   db-games:
-    build: "./db/games/"
+    build:
+      context: "./db/"
+      args:
+        - SERVICE_NAME=games
     ports:
       - "5432"
     networks:
@@ -203,10 +212,10 @@ networks:
 
 secrets:
   db-account-secret:
-    file: './db/account/secret/db_password.txt'
+    file: './db/secret/db_account_password.txt'
   db-auth-secret:
-    file: './db/auth/secret/db_password.txt'
+    file: './db/secret/db_auth_password.txt'
   db-games-secret:
-    file: './db/games/secret/db_password.txt'
+    file: './db/secret/db_games_password.txt'
   steam_api_key:
     file: '../middleware/steam-openid/secrets/steam_api_key.txt'
