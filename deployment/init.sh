@@ -76,6 +76,10 @@ gcloud secrets versions access latest --secret=SMTP_CONFIG_PASSWORD > $SMTP_PASS
 
 echo $DIR
 
+GCP_CERT_FILE_BUCKET_URL=https://storage.googleapis.com/root-cert-bucket/my-root-cert.crt
+GCP_PRIVATE_KEY_SECRET_NAME=ROOT_CA_PRIVATE_KEY
+GCP_PRIVATE_KEY_PASSPHRASE_SECRET_NAME=ROOT_CA_KEY_PASSPHRASE
+
 curl ${GCP_CERT_FILE_BUCKET_URL} -o ${ROOT_CA_VOLUME}/root-ca.crt
 gcloud secrets versions access latest --secret=${GCP_PRIVATE_KEY_SECRET_NAME} > ${ROOT_CA_VOLUME}/root-ca.key
 gcloud secrets versions access latest --secret=${GCP_PRIVATE_KEY_PASSPHRASE_SECRET_NAM} > ${ROOT_CA_VOLUME}/passphrase
