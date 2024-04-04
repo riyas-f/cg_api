@@ -127,6 +127,7 @@ services:
       - SMTP_CONFIG_NAME=SOME COMPANY
       - SMTP_CONFIG_EMAIL=adityapt.01@gmail.com
       - SMTP_PASSWORD_FILE=/run/secrets/smtp_password
+    entrypoint: "./scripts/compose-entrypoint.sh"
     secrets:
       - smtp_password
     networks:
