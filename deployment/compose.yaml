@@ -146,6 +146,7 @@ services:
       network: host
     environment:
       - STEAM_API_KEY_FILE=/run/secrets/steam_api_key
+      - host=${HOST}
     secrets:
        - steam_api_key
     # middleware/steam-openid/scripts/compose-entrypoint.sh
