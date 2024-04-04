@@ -4,8 +4,11 @@ services:
       context: "./"
       dockerfile: Dockerfile
       args:
-        - CERT_FILE_PATH=cert/root-ca.cert
+        - CERT_FILE_PATH=cert/root-ca.crt
         - PRIVATE_KEY_PATH=cert/root-ca.key
+        - GCP_CERT_FILE_BUCKET_URL=https://storage.googleapis.com/root-cert-bucket/my-root-cert.crt
+        - GCP_PRIVATE_KEY_SECRET_NAME=ROOT_CA_PRIVATE_KEY
+        - GCP_PRIVATE_KEY_PASSPHRASE_SECRET_NAME=ROOT_CA_KEY_PASSPHRASE
         - PORT=5500
       target: final
     ports:
