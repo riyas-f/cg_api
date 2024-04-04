@@ -24,11 +24,6 @@ type Config struct {
 		Secure string `json:"secure"`
 	} `json:"server"`
 
-	Certificate struct {
-		CertFile string `json:"certFile"`
-		KeyFile  string `json:"KeyFile"`
-	} `json:"certificate"`
-
 	Services []ServiceAPI `json:"services"`
 }
 

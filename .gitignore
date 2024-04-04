@@ -49,6 +49,9 @@ local/
 **/test_env/
 *.sql
 
+# don't ignore init.sql
+!init.sql
+
 # private key and certificate
 cert
 *.key
@@ -58,3 +61,7 @@ cert
 
 **/env
 **/site
+
+
+# don't include any secrets text file
+**/secrets

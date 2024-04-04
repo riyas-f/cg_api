@@ -11,12 +11,11 @@ import (
 	"time"
 
 	"github.com/AdityaP1502/Instant-Messanging/api/http/httputil"
-	"github.com/AdityaP1502/Instant-Messanging/api/service/account/config"
-	"github.com/AdityaP1502/Instant-Messanging/api/service/account/routes"
+	"github.com/AdityaP1502/Instant-Messanging/api/service/games/config"
+	"github.com/AdityaP1502/Instant-Messanging/api/service/games/routes"
 	"github.com/gorilla/mux"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
-	"github.com/rs/cors"
 )
 
 var (
@@ -61,14 +60,10 @@ func main() {
 		break
 	}
 
-	// a := s.PathPrefix("/account").Subrouter()
+	r := mux.NewRouter()
 
-	// a.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-	// 	w.Write([]byte("Hello, world!"))
-	// }).Methods("GET")
-
-	// wait until the server has ended
-
+	// load ca cert pool
+	caCertPool := httputil.LoadRootCACertPool(os.Getenv(ROOT_CA_CERT))
 	passphrasePath := os.Getenv(PASSPHRASE)
 
 	if passphrasePath == "" {
@@ -80,9 +75,6 @@ func main() {
 		os.Getenv(PRIVATE_KEY_PATH),
 		passphrasePath,
 	)
-
-	// load ca cert pool
-	caCertPool := httputil.LoadRootCACertPool(os.Getenv(ROOT_CA_CERT))
 
 	// outbound tls config (to internal service)
 	config.Config = &tls.Config{
@@ -96,9 +88,7 @@ func main() {
 		RootCAs: caCertPool,
 	}
 
-	r := mux.NewRouter()
-
-	routes.SetAccountRoute(r.PathPrefix("/v1").Subrouter(), db.DB, config)
+	routes.SetGamesRoute(r.PathPrefix("/v1").Subrouter(), db.DB, config)
 	// // r.Handle("/", r)
 
 	r.HandleFunc("/test", func(w http.ResponseWriter, r *http.Request) {
@@ -107,15 +97,13 @@ func main() {
 		w.WriteHeader(200)
 	}).Methods("GET")
 
-	corsHandler := cors.New(cors.Options{
-		AllowedOrigins:   []string{"*"},
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
-		AllowedHeaders:   []string{"Content-Type", "Authorization"},
-		ExposedHeaders:   []string{"Content-Length"},
-		AllowCredentials: true,
-		MaxAge:           86400, // time in seconds
-	}).Handler(r)
+	// a := s.PathPrefix("/account").Subrouter()
 
+	// a.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	// 	w.Write([]byte("Hello, world!"))
+	// }).Methods("GET")
+
+	// wait until the server has ended
 	var wg sync.WaitGroup
 	wg.Add(1)
 
@@ -137,7 +125,7 @@ func main() {
 
 			srv := http.Server{
 				Addr:      fmt.Sprintf("%s:%d", config.Server.Host, config.Server.Port),
-				Handler:   corsHandler,
+				Handler:   r,
 				TLSConfig: tlsConfig,
 			}
 
@@ -145,7 +133,7 @@ func main() {
 		} else {
 			err := http.ListenAndServe(
 				fmt.Sprintf("%s:%d", config.Server.Host, config.Server.Port),
-				corsHandler,
+				r,
 			)
 
 			if err != nil {

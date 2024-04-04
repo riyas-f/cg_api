@@ -17,6 +17,7 @@ const (
 	OTPExpired           errorType = "otp_expired"
 	CallsStatusInvalid   errorType = "invalid_status_value"
 	SteamNotLinked       errorType = "steam_not_linked"
+	SteamAlreadyLinked   errorType = "steam_has_been_linked"
 )
 
 const (
@@ -31,6 +32,7 @@ const (
 	OTPInvalidMessage           errorMessageTemplate = "otp is invalid"
 	OTPExpiredMessage           errorMessageTemplate = "otp is expired. please resend a new otp to your email"
 	StatusInvalidMessage        errorMessageTemplate = "trying to update status to {{.reqStatus}} when user status is {{.status}}"
+	SteamAlreadyLinkedMessage   errorMessageTemplate = "this account has been linked to steam"
 	SteamNotLinkedMessage       errorMessageTemplate = "account has not been linked to steam yet"
 )
 
