@@ -34,8 +34,8 @@ ENV HOST "0.0.0.0:${PORT}"
 WORKDIR /app
 
 
-COPY --from=build /tmp/passphrase /tmp/passphrase
 COPY --from=build /github.com/AdityaP1502/Instant-Messanging/cert_manager/app .
+# COPY --from=build /tmp/passphrase /tmp/passphrase
 # COPY --from=build /github.com/AdityaP1502/Instant-Messanging/cert_manager/cert/ cert/
 EXPOSE $PORT
 CMD ["./app"]
