@@ -163,6 +163,8 @@ services:
       - "5432"
     networks:
       - account
+    volumes:
+      - ${DB_VOLUME}/db-account:/var/lib/postgresql/data
     environment:
       - POSTGRES_USER=test
       - POSTGRES_PASSWORD_FILE=/run/secrets/db-account-secret
@@ -182,6 +184,8 @@ services:
       - "5432"
     networks:
       - auth
+    volumes:
+      - ${DB_VOLUME}/db-auth:/var/lib/postgresql/data
     environment:
       - POSTGRES_USER=test
       - POSTGRES_PASSWORD_FILE=/run/secrets/db-auth-secret
@@ -201,6 +205,8 @@ services:
       - "5432"
     networks:
       - games
+    volumes:
+      - ${DB_VOLUME}/db-games:/var/lib/postgresql/data
     environment:
       - POSTGRES_USER=test
       - POSTGRES_PASSWORD_FILE=/run/secrets/db-games-secret
