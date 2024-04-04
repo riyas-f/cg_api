@@ -25,11 +25,13 @@ WORKDIR /app
 
 # create cert key
 COPY scripts/create_cert_key.sh scripts/create_cert_key.sh
+RUN chmod +x scripts/create_cert_key.sh
 RUN scripts/create_cert_key.sh
 
 # copy the application code into
 # the directory
 COPY . .
+RUN chmod +x scripts/compose-entrypoint.sh
 
 ENV port ${PORT}
 ENV CERT_FILE_PATH ${CERT_FILE_PATH}

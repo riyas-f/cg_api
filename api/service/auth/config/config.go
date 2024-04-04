@@ -9,6 +9,13 @@ import (
 	"github.com/AdityaP1502/Instant-Messanging/api/jsonutil"
 )
 
+var (
+	DB_PASSWORD    string = os.Getenv("DB_PASSWORD")
+	DB_USER        string = os.Getenv("DB_USER")
+	DB_DATABASE    string = os.Getenv("DB_DATABASE_NAME")
+	JWT_SECRET_KEY string = os.Getenv("JWT_SECRET_KEY")
+)
+
 type Service struct {
 	Host string `json:"host"`
 	Port int    `json:"port,string"`
@@ -52,6 +59,12 @@ type Config struct {
 
 func ReadJSONConfiguration(path string) (*Config, error) {
 	var config Config
+
+	// Read config from environmet variables
+	config.Database.Username = DB_USER
+	config.Database.Password = DB_PASSWORD
+	config.Database.Database = DB_DATABASE
+	config.Session.SecretKeyBase64 = JWT_SECRET_KEY
 
 	exe, err := os.Executable()
 	if err != nil {

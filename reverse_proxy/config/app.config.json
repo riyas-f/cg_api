@@ -1,0 +1,34 @@
+{
+  "service_name": "reverse-proxy",
+
+  "version": "v1",
+
+  "server": {
+    "host": "0.0.0.0",
+    "port": "3000",
+    "secure": "true"
+  },
+
+  "services": 
+    [
+      {
+        "endpoint": "account",
+        "host": "account",
+        "port": "8000",
+        "scheme": "https"
+      },
+      {
+        "endpoint": "auth",
+        "host": "auth",
+        "port": "6000",
+        "scheme": "https"
+      },
+      {
+        "endpoint":"games",
+        "host": "games",
+        "port": "3500",
+        "scheme": "https"
+      }
+
+    ]
+}

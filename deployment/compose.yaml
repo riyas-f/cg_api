@@ -40,6 +40,16 @@ services:
     networks:
       - auth
       - internal
+    environment:
+      - DB_USER=test
+      - DB_PASSWORD_FILE=/run/secrets/db-auth-secret
+      - DB_DATABASE_NAME=auth_db
+      - JWT_SECRET_KEY_FILE=/run/secrtes/jwt-secret-key
+    entrypoint: ./scripts/compose-entrypoint.sh
+    secrets:
+      - db-auth-secret
+      - jwt-secret-key
+      
     depends_on:
       db-auth:
         condition: service_healthy
@@ -63,6 +73,15 @@ services:
     networks:
       - account
       - internal
+    environment:
+      - DB_USER=test
+      - DB_PASSWORD_FILE=/run/secrets/db-account-secret
+      - DB_DATABASE_NAME=account_db
+      - HASH_SECRET_KEY_FILE=/run/secrets/password-hash-key
+    entrypoint: ./scripts/compose-entrypoint.sh
+    secrets:
+      - db-account-secret
+      - password-hash-key
     depends_on:
       db-account:
         condition: service_healthy
@@ -86,6 +105,13 @@ services:
     networks:
       - games
       - internal
+    environment:
+      - DB_USER=test
+      - DB_PASSWORD_FILE=/run/secrets/db-games-secret
+      - DB_DATABASE_NAME=games_db
+    entrypoint: ./scripts/compose-entrypoint.sh
+    secrets:
+      - db-games-secret
     depends_on:
       db-games:
         condition: service_healthy
@@ -96,6 +122,14 @@ services:
     build: "../middleware/mail/"
     ports:
       - "4000"
+    environment:
+      - PORT=4000
+      - SMTP_CONFIG_NAME=SOME COMPANY
+      - SMTP_CONFIG_EMAIL=adityapt.01@gmail.com
+      - SMTP_PASSWORD_FILE=/run/secrets/smtp_password
+    entrypoint: "./scripts/compose-entrypoint.sh"
+    secrets:
+      - smtp_password
     networks:
       - internal
 
@@ -112,6 +146,7 @@ services:
       network: host
     environment:
       - STEAM_API_KEY_FILE=/run/secrets/steam_api_key
+      - host=${HOST}
     secrets:
        - steam_api_key
     # middleware/steam-openid/scripts/compose-entrypoint.sh
@@ -121,34 +156,65 @@ services:
     networks:
       - internal
       - public
-
   db-account:
-    build: "./db/account/"
+    build:
+      context: "./db/"
+      args:
+        - SERVICE_NAME=account
     ports:
       - "5432"
     networks:
       - account
+    volumes:
+      - ${DB_VOLUME}/db-account:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=test
+      - POSTGRES_PASSWORD_FILE=/run/secrets/db-account-secret
+    secrets:
+      - db-account-secret
+    # entrypoint: /scripts/postgres-compose-entrypoint.sh
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "test"]
       timeout: 20s
       retries: 10
   db-auth:
-    build: "./db/auth/"
+    build:
+      context: "./db/"
+      args:
+        - SERVICE_NAME=auth
     ports:
       - "5432"
     networks:
       - auth
+    volumes:
+      - ${DB_VOLUME}/db-auth:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=test
+      - POSTGRES_PASSWORD_FILE=/run/secrets/db-auth-secret
+    secrets:
+      - db-auth-secret
+    # entrypoint: /scripts/postgres-compose-entrypoint.sh
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "test"]
       timeout: 20s
       retries: 10
-
   db-games:
-    build: "./db/games/"
+    build:
+      context: "./db/"
+      args:
+        - SERVICE_NAME=games
     ports:
       - "5432"
     networks:
       - games
+    volumes:
+      - ${DB_VOLUME}/db-games:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=test
+      - POSTGRES_PASSWORD_FILE=/run/secrets/db-games-secret
+    secrets:
+      - db-games-secret
+    # entrypoint: /scripts/postgres-compose-entrypoint.sh
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "test"]
       timeout: 20s
@@ -163,5 +229,17 @@ networks:
     driver: bridge
 
 secrets:
+  password-hash-key:
+    file: '../api/secrets/password_hash_key.txt'
+  jwt-secret-key:
+    file: '../api/secrets/jwt_secret_key.txt'
+  db-account-secret:
+    file: './db/secrets/db_account_password.txt'
+  db-auth-secret:
+    file: './db/secrets/db_auth_password.txt'
+  db-games-secret:
+    file: './db/secrets/db_games_password.txt'
+  smtp_password:
+    file: '../middleware/mail/secrets/smtp_password.txt'
   steam_api_key:
     file: '../middleware/steam-openid/secrets/steam_api_key.txt'

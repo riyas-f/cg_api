@@ -1,4 +1,4 @@
-FROM golang:1.22-alpine AS build
+FROM docker.io/library/golang:1.22-alpine@sha256:0466223b8544fb7d4ff04748acc4d75a608234bf4e79563bff208d2060c0dd79 AS build
 ARG SERVICE_NAME
 ARG PORT
 ARG CSR_FILE_PATH
@@ -16,14 +16,24 @@ RUN apk update && \
     apk add --no-cache openssl curl
 
 WORKDIR /github.com/AdityaP1502/Instant-Messanging/api/
-COPY . .
 
+COPY go.mod . 
+COPY go.sum .
+RUN go mod download
+
+COPY scripts/create_cert_key.sh scripts/create_cert_key.sh
+RUN chmod +x scripts/create_cert_key.sh
 RUN scripts/create_cert_key.sh
 
-RUN go mod download
+COPY . .
+
+# RUN chmod +x scripts/create_cert_key.sh
+# RUN scripts/create_cert_key.sh
+
+# RUN go mod download
 RUN --mount=type=cache,target=/root/.cache/go-build go build -o app service/$SERVICE_NAME/main.go
 
-FROM alpine:latest AS final
+FROM docker.io/library/alpine:3.19@sha256:c5b1261d6d3e43071626931fc004f70149baeba2c8ec672bd4f27761f8e1ad6b AS final
 
 ARG SERVICE_NAME
 ARG PORT
@@ -42,9 +52,11 @@ RUN cat /usr/local/share/ca-certificates/root-ca.crt >> /etc/ssl/certs/ca-certif
 # set env for root ca
 
 COPY --from=build /tmp/passphrase /tmp/passphrase
+COPY --from=build /github.com/AdityaP1502/Instant-Messanging/api/scripts scripts
 COPY --from=build /github.com/AdityaP1502/Instant-Messanging/api/app .
 COPY --from=build /github.com/AdityaP1502/Instant-Messanging/api/service/$SERVICE_NAME/config/app.config.json config/app.config.json
 COPY --from=build /github.com/AdityaP1502/Instant-Messanging/api/service/$SERVICE_NAME/cert/ cert/
 
+RUN chmod +x scripts/compose-entrypoint.sh
 EXPOSE $PORT
 CMD ["./app"]

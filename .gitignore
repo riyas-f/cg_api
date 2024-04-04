@@ -37,7 +37,8 @@ Client/process/doodle/*
 *.txt
 *.csv
 *.env
-**/app.config.json
+**.json
+!app.config.json
 
 # go binary 
 **/bin/
@@ -51,6 +52,7 @@ local/
 
 # don't ignore init.sql
 !init.sql
+!*-init.sql
 
 # private key and certificate
 cert

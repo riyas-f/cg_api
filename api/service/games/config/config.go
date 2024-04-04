@@ -8,12 +8,17 @@ import (
 	"github.com/AdityaP1502/Instant-Messanging/api/jsonutil"
 )
 
+var (
+	DB_PASSWORD string = os.Getenv("DB_PASSWORD")
+	DB_USER     string = os.Getenv("DB_USER")
+	DB_DATABASE string = os.Getenv("DB_DATABASE_NAME")
+)
+
 type Service struct {
 	Host   string `json:"host"`
 	Port   int    `json:"port,string"`
 	Scheme string `json:"scheme"`
 }
-
 type Config struct {
 	ServiceName string `json:"service_name"`
 	Version     string `json:"version"`
@@ -46,6 +51,10 @@ type Config struct {
 
 func ReadJSONConfiguration(path string) (*Config, error) {
 	var config Config
+
+	config.Database.Username = DB_USER
+	config.Database.Password = DB_PASSWORD
+	config.Database.Database = DB_DATABASE
 
 	exe, err := os.Executable()
 	if err != nil {
