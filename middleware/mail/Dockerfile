@@ -2,8 +2,12 @@ FROM docker.io/library/node:16-alpine@sha256:a1f9d027912b58a7c75be7716c97cfbc6d3
 
 WORKDIR /app
 
+COPY package.json /tmp/package.json
+RUN cd /tmp && npm install
+RUN mkdir -p /app && cp -a /tmp/node_modules app/
+
 COPY . . 
 
-RUN npm install
+RUN chmod +x scripts/compose-entrypoint.sh
 
 CMD ["node", "app.js"]
