@@ -87,7 +87,7 @@ gcloud secrets versions access latest --secret="${GCP_PRIVATE_KEY_PASSPHRASE_SEC
 echo Starting certificate manager service. Please wait...
 
 # run cert manager in the background
-cd $DIR/../cert-manager && docker-compose down &&  docker compose build --no-cache && docker-compose up -d
+cd $DIR/../cert-manager && docker-compose down &&  docker-compose build --no-cache && docker-compose up -d
 
 # cert manager health check
 health_check "https://localhost:5500/health"
@@ -95,7 +95,7 @@ health_check "https://localhost:5500/health"
 echo Certificate manager is up and running on localhost:5500
 
 echo Starting the api. Please wait...
-cd $DIR && docker-compose down && docker compose build --no-cache && docker-compose up -d
+cd $DIR && docker-compose down && docker-compose build --no-cache && docker-compose up -d
 health_check "https://localhost:3000/health"
 echo api is up and running on localhost:3000
 echo success
