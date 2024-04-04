@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 
 health_check() {
     # Endpoint for health check
@@ -46,6 +45,9 @@ mkdir -p $DIR/db/secrets
 mkdir -p $DIR/../middleware/mail/secrets
 mkdir -p $DIR../middleware/steam-openid/secrets
 mkdir -p $DIR/../middleware/mail/secrets/smtp_password.txt
+
+set -e
+
 openssl rand -base64 128 > $PASSWORD_HASH_SECRET_KEY_FILE
 openssl rand -base64 128 > $JWT_SECRET_KEY_FILE
 openssl rand -base64 128 > $DB_ACCOUNT_SECRET_FILE
