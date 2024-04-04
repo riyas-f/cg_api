@@ -37,8 +37,8 @@ JWT_SECRET_KEY_FILE=$DIR/../api/secrets/jwt_secret_key.txt
 DB_ACCOUNT_SECRET_FILE=$DIR/db/secrets/db_account_password.txt
 DB_AUTH_SECRET_FILE=$DIR/db/secrets/db_auth_password.txt
 DB_GAMES_SECRET_FILE=$DIR/db/secrets/db_games_password.txt
-SMTP_PASSWORD_FILE=$DIR/../middleware/steam-openid/secrets/smtp_password.txt
-STEAM_API_KEY_FILE=$DIR/../middleware/mail/secrets/smtp_password.txt
+STEAM_API_KEY_FILE=$DIR/../middleware/steam-openid/secrets/steam_api_key.txt
+SMTP_PASSWORD_FILE=$DIR/../middleware/mail/secrets/smtp_password.txt
 
 mkdir -p $DIR/../api/secrets
 mkdir -p $DIR/db/secrets
