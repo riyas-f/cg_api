@@ -21,9 +21,6 @@ health_check() {
 
 # retrieve GCP instance Public IP
 ZONE="asia-southeast2-a"
-INSTANCE_NAME=$(curl -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/name)
-export HOST=$(gcloud compute instances describe $INSTANCE_NAME -zone=$ZONE --format='get(networkInterfaces[0].accessConfigs[0].natIP)')
-
 
 # get the directory where the script is located
 SOURCE=${BASH_SOURCE[0]}
@@ -51,6 +48,9 @@ mkdir -p $DIR/../middleware/steam-openid/secrets
 mkdir -p $DIR/../middleware/mail/secrets
 
 set -e
+
+INSTANCE_NAME=$(curl -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/name)
+export HOST=$(gcloud compute instances describe $INSTANCE_NAME --zone=$ZONE --format='get(networkInterfaces[0].accessConfigs[0].natIP)')
 
 # don't change when the file already exists
 if ! [ -f $DB_ACCOUNT_SECRET_FILE ]; then 
