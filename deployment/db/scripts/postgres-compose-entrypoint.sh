@@ -1,3 +1,0 @@
-#!/bin/sh
-export POSTGRES_USER=$DB_USER
-export POSTGRES_PASSWORD=$(cat $DB_PASSWORD_FILE)
