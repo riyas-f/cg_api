@@ -28,18 +28,30 @@ func CertMiddleware(rootCACerts *x509.CertPool) Middleware {
 			if x := r.Header.Get("x-client-cert"); r.TLS != nil && x != "" {
 				pemBytes, err := base64.StdEncoding.DecodeString(x)
 				if err != nil {
-					return responseerror.CreateInternalServiceError(err)
+					return responseerror.CreateUnauthorizedError(
+						responseerror.AccessDenied,
+						responseerror.AccessDeniedMessage,
+						nil,
+					)
 				}
 
 				pemBlock, _ := pem.Decode(pemBytes)
 				if pemBlock == nil {
-					return responseerror.CreateInternalServiceError(err)
+					return responseerror.CreateUnauthorizedError(
+						responseerror.AccessDenied,
+						responseerror.AccessDeniedMessage,
+						nil,
+					)
 				}
 
 				cert, err := x509.ParseCertificate(pemBlock.Bytes)
 
 				if err != nil {
-					return responseerror.CreateInternalServiceError(err)
+					return responseerror.CreateUnauthorizedError(
+						responseerror.AccessDenied,
+						responseerror.AccessDeniedMessage,
+						nil,
+					)
 				}
 
 				opts := x509.VerifyOptions{
@@ -50,7 +62,11 @@ func CertMiddleware(rootCACerts *x509.CertPool) Middleware {
 				chains, err := cert.Verify(opts)
 
 				if err != nil {
-					return responseerror.CreateInternalServiceError(err)
+					return responseerror.CreateUnauthorizedError(
+						responseerror.AccessDenied,
+						responseerror.AccessDeniedMessage,
+						nil,
+					)
 				}
 
 				if len(chains) > 0 {
