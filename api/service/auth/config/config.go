@@ -12,7 +12,7 @@ import (
 var (
 	DB_PASSWORD    string = os.Getenv("DB_PASSWORD")
 	DB_USER        string = os.Getenv("DB_USER")
-	DB_DATABASE    string = os.Getenv("DB_DATABASE")
+	DB_DATABASE    string = os.Getenv("DB_DATABASE_NAME")
 	JWT_SECRET_KEY string = os.Getenv("JWT_SECRET_KEY")
 )
 
