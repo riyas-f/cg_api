@@ -81,8 +81,8 @@ GCP_PRIVATE_KEY_SECRET_NAME=ROOT_CA_PRIVATE_KEY
 GCP_PRIVATE_KEY_PASSPHRASE_SECRET_NAME=ROOT_CA_KEY_PASSPHRASE
 
 curl ${GCP_CERT_FILE_BUCKET_URL} -o ${ROOT_CA_VOLUME}/root-ca.crt
-gcloud secrets versions access latest --secret=${GCP_PRIVATE_KEY_SECRET_NAME} > ${ROOT_CA_VOLUME}/root-ca.key
-gcloud secrets versions access latest --secret=${GCP_PRIVATE_KEY_PASSPHRASE_SECRET_NAM} > ${ROOT_CA_VOLUME}/passphrase
+gcloud secrets versions access latest --secret="${GCP_PRIVATE_KEY_SECRET_NAME}" > ${ROOT_CA_VOLUME}/root-ca.key
+gcloud secrets versions access latest --secret="${GCP_PRIVATE_KEY_PASSPHRASE_SECRET_NAME}" > ${ROOT_CA_VOLUME}/passphrase
 
 echo Starting certificate manager service. Please wait...
 
