@@ -75,6 +75,11 @@ gcloud secrets versions access latest --secret=STEAM_API_KEY > $STEAM_API_KEY_FI
 gcloud secrets versions access latest --secret=SMTP_CONFIG_PASSWORD > $SMTP_PASSWORD_FILE
 
 echo $DIR
+
+curl ${GCP_CERT_FILE_BUCKET_URL} -o ${ROOT_CA_VOLUME}/root-ca.crt
+gcloud secrets versions access latest --secret=${GCP_PRIVATE_KEY_SECRET_NAME} > ${ROOT_CA_VOLUME}/root-ca.key
+gcloud secrets versions access latest --secret=${GCP_PRIVATE_KEY_PASSPHRASE_SECRET_NAM} > ${ROOT_CA_VOLUME}/passphrase
+
 echo Starting certificate manager service. Please wait...
 
 # run cert manager in the background
