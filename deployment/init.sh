@@ -46,11 +46,11 @@ mkdir -p $DIR/db/secrets
 mkdir -p $DIR/../middleware/mail/secrets
 mkdir -p $DIR../middleware/steam-openid/secrets
 
-openssl rand -base64 128 > PASSWORD_HASH_SECRET_KEY_FILE
-openssl rand -base64 128 > JWT_SECRET_KEY_FILE
-openssl rand -base64 128 > DB_ACCOUNT_SECRET_FILE
-openssl rand -base64 128 > DB_AUTH_SECRET_FILE
-openssl rand -base64 128 > DB_GAMES_SECRET_FILE
+openssl rand -base64 128 > $PASSWORD_HASH_SECRET_KEY_FILE
+openssl rand -base64 128 > $JWT_SECRET_KEY_FILE
+openssl rand -base64 128 > $DB_ACCOUNT_SECRET_FILE
+openssl rand -base64 128 > $DB_AUTH_SECRET_FILE
+openssl rand -base64 128 > $DB_GAMES_SECRET_FILE
 
 # access secret manager
 gcloud secrets versions access latest --secret=STEAM_API_KEY > STEAM_API_KEY_FILE
