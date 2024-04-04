@@ -44,7 +44,7 @@ mkdir -p $DIR/../api/secrets
 mkdir -p $DIR/db/secrets
 mkdir -p $DIR/../middleware/mail/secrets
 mkdir -p $DIR../middleware/steam-openid/secrets
-mkdir -p $DIR/../middleware/mail/secrets/smtp_password.txt
+mkdir -p $DIR/../middleware/mail/secrets
 
 set -e
 
