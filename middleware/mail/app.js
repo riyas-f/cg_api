@@ -8,12 +8,12 @@ const sendVerificationMail = (to, text, subject) => {
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
-          user: process.env.SMTP_CONFIG_MAIL,
+          user: process.env.SMTP_CONFIG_EMAIL,
           pass: process.env.SMTP_CONFIG_PASSWORD, 
       }
   });
     
-    const from = `${process.env.SMTP_CONFIG_NAME} <${process.env.SMTP_CONFIG_MAIL}>`
+    const from = `${process.env.SMTP_CONFIG_NAME} <${process.env.SMTP_CONFIG_EMAIL}>`
     const mailOptions = {
       from, 
       to, 
