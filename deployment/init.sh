@@ -48,11 +48,23 @@ mkdir -p $DIR/../middleware/mail/secrets
 
 set -e
 
+# don't change when the file already exists
+if ! [ -f $DB_ACCOUNT_SECRET_FILE ]; then 
+    echo "$(openssl rand -base64 128)" | tr -d '\n'> $DB_ACCOUNT_SECRET_FILE
+fi 
+
+if ! [ -f $DB_AUTH_SECRET_FILE ]; then 
+    echo "$(openssl rand -base64 128)" | tr -d '\n'> $DB_AUTH_SECRET_FILE
+fi 
+
+if ! [ -f $DB_GAMES_SECRET_FILE ]; then 
+    echo "$(openssl rand -base64 128)" | tr -d '\n'> $DB_GAMES_SECRET_FILE
+fi 
+
+
 echo "$(openssl rand -base64 128)" | tr -d '\n'> $PASSWORD_HASH_SECRET_KEY_FILE
 echo "$(openssl rand -base64 128)" | tr -d '\n'> $JWT_SECRET_KEY_FILE
-echo "$(openssl rand -base64 128)" | tr -d '\n'> $DB_ACCOUNT_SECRET_FILE
-echo "$(openssl rand -base64 128)" | tr -d '\n'> $DB_AUTH_SECRET_FILE
-echo "$(openssl rand -base64 128)" | tr -d '\n'> $DB_GAMES_SECRET_FILE
+
 
 # access secret manager
 gcloud secrets versions access latest --secret=STEAM_API_KEY > $STEAM_API_KEY_FILE
