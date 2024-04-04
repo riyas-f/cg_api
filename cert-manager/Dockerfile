@@ -1,14 +1,17 @@
 FROM docker.io/library/golang:1.22-alpine@sha256:0466223b8544fb7d4ff04748acc4d75a608234bf4e79563bff208d2060c0dd79 AS build
 ARG PORT
 ARG CERT_FILE_PATH
-ARG PRIVATE_KEY_PATH
+ARG PRIVATE_KEY_PATH 
+ARG GCP_CERT_FILE_BUCKET_URL
+ARG GCP_PRIVATE_KEY_SECRET_NAME
+ARG GCP_PRIVATE_KEY_PASSPHRASE_SECRET_NAM 
 
 RUN echo "port: ${PORT}"
 
 RUN 
 
 RUN apk update && \
-    apk add --no-cache openssl
+    apk add --no-cache curl openssl
 
 WORKDIR /github.com/AdityaP1502/Instant-Messanging/cert_manager
 COPY . .
