@@ -19,6 +19,9 @@ health_check() {
     done
 }
 
+# retrieve GCP instance Public IP
+INSTANCE_NAME=$(curl -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/name)
+export HOST=$(gcloud compute instances describe $INSTANCE_NAME --format='get(networkInterfaces[0].accessConfigs[0].natIP)')
 
 
 # get the directory where the script is located
