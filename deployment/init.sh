@@ -53,8 +53,8 @@ openssl rand -base64 128 > $DB_AUTH_SECRET_FILE
 openssl rand -base64 128 > $DB_GAMES_SECRET_FILE
 
 # access secret manager
-gcloud secrets versions access latest --secret=STEAM_API_KEY > STEAM_API_KEY_FILE
-gcloud secrets versions access latest --secret=SMTP_CONFIG_PASSWORD > SMTP_PASSWORD_FILE
+gcloud secrets versions access latest --secret=STEAM_API_KEY > $STEAM_API_KEY_FILE
+gcloud secrets versions access latest --secret=SMTP_CONFIG_PASSWORD > $SMTP_PASSWORD_FILE
 
 echo $DIR
 echo Starting certificate manager service. Please wait...
