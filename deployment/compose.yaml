@@ -43,7 +43,7 @@ services:
     environment:
       - DB_USER=test
       - DB_PASSWORD_FILE=/run/secrets/db-auth-secret
-      - DB_DATABASE=auth-db
+      - DB_DATABASE_NAME=auth_db
       - JWT_SECRET_KEY_FILE=/run/secrtes/jwt-secret-key
     entrypoint: ./scripts/compose-entrypoint.sh
     secrets:
@@ -76,7 +76,7 @@ services:
     environment:
       - DB_USER=test
       - DB_PASSWORD_FILE=/run/secrets/db-account-secret
-      - DB_DATABASE=account-db
+      - DB_DATABASE_NAME=account_db
       - HASH_SECRET_KEY_FILE=/run/secrets/password-hash-key
     entrypoint: ./scripts/compose-entrypoint.sh
     secrets:
@@ -108,7 +108,7 @@ services:
     environment:
       - DB_USER=test
       - DB_PASSWORD_FILE=/run/secrets/db-games-secret
-      - DB_DATABASE=games-db
+      - DB_DATABASE_NAME=games_db
     entrypoint: ./scripts/compose-entrypoint.sh
     secrets:
       - db-games-secret
@@ -154,7 +154,6 @@ services:
     networks:
       - internal
       - public
-
   db-account:
     build:
       context: "./db/"
@@ -165,11 +164,11 @@ services:
     networks:
       - account
     environment:
-      - DB_USER=test
-      - DB_PASSWORD_FILE=/run/secrets/db-account-secret
+      - POSTGRES_USER=test
+      - POSTGRES_PASSWORD_FILE=/run/secrets/db-account-secret
     secrets:
       - db-account-secret
-    entrypoint: /scripts/postgres-entrypoint.sh
+    # entrypoint: /scripts/postgres-compose-entrypoint.sh
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "test"]
       timeout: 20s
@@ -184,16 +183,15 @@ services:
     networks:
       - auth
     environment:
-      - DB_USER=test
-      - DB_PASSWORD_FILE=/run/secrets/db-auth-secret
+      - POSTGRES_USER=test
+      - POSTGRES_PASSWORD_FILE=/run/secrets/db-auth-secret
     secrets:
       - db-auth-secret
-    entrypoint: /scripts/postgres-entrypoint.sh
+    # entrypoint: /scripts/postgres-compose-entrypoint.sh
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "test"]
       timeout: 20s
       retries: 10
-
   db-games:
     build:
       context: "./db/"
@@ -204,11 +202,11 @@ services:
     networks:
       - games
     environment:
-      - DB_USER=test
-      - DB_PASSWORD_FILE=/run/secrets/db-games-secret
+      - POSTGRES_USER=test
+      - POSTGRES_PASSWORD_FILE=/run/secrets/db-games-secret
     secrets:
       - db-games-secret
-    entrypoint: /scripts/postgres-entrypoint.sh
+    # entrypoint: /scripts/postgres-compose-entrypoint.sh
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "test"]
       timeout: 20s
