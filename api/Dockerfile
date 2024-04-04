@@ -57,6 +57,6 @@ COPY --from=build /github.com/AdityaP1502/Instant-Messanging/api/app .
 COPY --from=build /github.com/AdityaP1502/Instant-Messanging/api/service/$SERVICE_NAME/config/app.config.json config/app.config.json
 COPY --from=build /github.com/AdityaP1502/Instant-Messanging/api/service/$SERVICE_NAME/cert/ cert/
 
-RUN chomod +x scripts/compose-entrypoint.sh
+RUN chmod +x scripts/compose-entrypoint.sh
 EXPOSE $PORT
 CMD ["./app"]
