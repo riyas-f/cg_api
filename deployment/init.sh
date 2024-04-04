@@ -75,10 +75,19 @@ gcloud secrets versions access latest --secret=STEAM_API_KEY > $STEAM_API_KEY_FI
 gcloud secrets versions access latest --secret=SMTP_CONFIG_PASSWORD > $SMTP_PASSWORD_FILE
 
 echo $DIR
+
+GCP_CERT_FILE_BUCKET_URL=https://storage.googleapis.com/root-cert-bucket/my-root-cert.crt
+GCP_PRIVATE_KEY_SECRET_NAME=ROOT_CA_PRIVATE_KEY
+GCP_PRIVATE_KEY_PASSPHRASE_SECRET_NAME=ROOT_CA_KEY_PASSPHRASE
+
+curl ${GCP_CERT_FILE_BUCKET_URL} -o ${ROOT_CA_VOLUME}/root-ca.crt
+gcloud secrets versions access latest --secret="${GCP_PRIVATE_KEY_SECRET_NAME}" > ${ROOT_CA_VOLUME}/root-ca.key
+gcloud secrets versions access latest --secret="${GCP_PRIVATE_KEY_PASSPHRASE_SECRET_NAME}" > ${ROOT_CA_VOLUME}/passphrase
+
 echo Starting certificate manager service. Please wait...
 
 # run cert manager in the background
-cd $DIR/../cert-manager && docker-compose down &&  docker-compose up --build -d
+cd $DIR/../cert-manager && docker-compose down &&  docker-compose build --no-cache && docker-compose up -d
 
 # cert manager health check
 health_check "https://localhost:5500/health"
@@ -86,7 +95,7 @@ health_check "https://localhost:5500/health"
 echo Certificate manager is up and running on localhost:5500
 
 echo Starting the api. Please wait...
-cd $DIR && docker-compose down && docker-compose up --build  -d
+cd $DIR && docker-compose down && docker-compose build --no-cache && docker-compose up -d
 health_check "https://localhost:3000/health"
 echo api is up and running on localhost:3000
 echo success

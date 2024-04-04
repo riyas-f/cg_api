@@ -8,9 +8,9 @@ export STATE="West Java"
 export LOCALITY="Banudng"
 export ORGANIZATION="Aditya Software Ltd"
 export ORG_UNIT="Aditya Software Services"
-export COMMON_NAME="localhost"
+export COMMON_NAME="${HOST}"
 export UNIT="/C=${COUNTRY}/ST=${STATE}/L=${LOCALITY}/O=${ORGANIZATION}/OU=${ORG_UNIT}/CN=${COMMON_NAME}"
-export SUBJECT_ALT_NAME="DNS.1:localhost"
+export SUBJECT_ALT_NAME="DNS.1:localhost,IP.1:${HOST}"
 
 echo $CSR_FILE_PATH
 echo $CERT_FILE_PATH

@@ -4,14 +4,20 @@ services:
       context: "./"
       dockerfile: Dockerfile
       args:
-        - CERT_FILE_PATH=cert/root-ca.cert
-        - PRIVATE_KEY_PATH=cert/root-ca.key
         - PORT=5500
       target: final
+    
+    environment:
+      - CERT_FILE_PATH=/cert/root-ca.crt
+      - PRIVATE_KEY_PATH=/cert/root-ca.key
+      - PASSPHRASE_PATH=/cert/passphrase
+
     ports:
       - "5500:5500"
     networks:
       - public
+    volumes:
+      - ${ROOT_CA_VOLUME}:/cert
 
 networks:
   public: 

@@ -22,6 +22,7 @@ import (
 var (
 	CERT_FILE_PATH   = "CERT_FILE_PATH"
 	PRIVATE_KEY_PATH = "PRIVATE_KEY_PATH"
+	PASSPHRASE_PATH  = "PASSPHRASE_PATH"
 	HOST             = "HOST"
 )
 
@@ -57,6 +58,7 @@ func SignCertificate(csrFile io.Reader, caCRT *x509.Certificate, caPrivateKey in
 		Issuer:       caCRT.Subject,
 		Subject:      clientCSR.Subject,
 		DNSNames:     clientCSR.DNSNames,
+		IPAddresses:  clientCSR.IPAddresses,
 		NotBefore:    time.Now(),
 		NotAfter:     time.Now().Add(24 * time.Hour),
 		KeyUsage:     x509.KeyUsageDigitalSignature,
@@ -80,7 +82,7 @@ func SignCertificate(csrFile io.Reader, caCRT *x509.Certificate, caPrivateKey in
 
 func main() {
 
-	pw, err := os.ReadFile("/tmp/passphrase")
+	pw, err := os.ReadFile(os.Getenv(PASSPHRASE_PATH))
 
 	if err != nil {
 		log.Fatal(err)

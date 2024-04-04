@@ -109,7 +109,7 @@ func main() {
 				},
 				ClientCAs:  rootCAPool,
 				MinVersion: tls.VersionTLS10,
-				ClientAuth: tls.VerifyClientCertIfGiven,
+				ClientAuth: tls.RequestClientCert,
 			}
 
 			srv := http.Server{
