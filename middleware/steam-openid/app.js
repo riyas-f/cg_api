@@ -38,12 +38,11 @@ function checkAxiosError(error) {
   } else {
     // something bad happened when setting up the request
     console.log(`Error: ${error.message}`)
-
   }
 }
 
 async function getSteamOwnedGames(steamID) {
-  url = 'https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/'
+  let url = 'https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/'
 
   //https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?steamid=76561198221895016&include_played_free_games=1&include_appinfo=1&format=json
   const res = await axios.get(
@@ -176,12 +175,12 @@ app.get('/middleware/steam/return/:username',
     console.log(failRedirect)
     console.log(successRedirect)
     
-    splitStr = req.user.identifier.split("/");
-    id = splitStr[splitStr.length - 1];
+    let splitStr = req.user.identifier.split("/");
+    let id = splitStr[splitStr.length - 1];
 
     // link steam account
     try {
-      resp = await instance.post(`${LINK_ENDPOINT_HOST}/${username}/steam`, 
+      let resp = await instance.post(`${LINK_ENDPOINT_HOST}/${username}/steam`, 
         {
           steamid: id
         }, 
@@ -214,9 +213,9 @@ app.get('/middleware/steam/return/:username',
     }
 
     try {
-      const userGames = await getSteamOwnedGames(id);
+      let userGames = await getSteamOwnedGames(id);
 
-      filteredUserGames = userGames.games.map(obj => {
+      let filteredUserGames = userGames.games.map(obj => {
         return {
           name: obj.name,
           app_id:obj.appid,
@@ -225,13 +224,13 @@ app.get('/middleware/steam/return/:username',
       });
   
   
-      data = {
+      let data = {
         games: filteredUserGames
       };
 
       console.log(data);
 
-      resp = await instance.post(`${SYNC_ENDPOINT_HOST}/${username}/sync`, 
+      let resp = await instance.post(`${SYNC_ENDPOINT_HOST}/${username}/sync`, 
       data, 
       {
         headers: {
@@ -240,7 +239,6 @@ app.get('/middleware/steam/return/:username',
       }); 
 
       console.log(resp.data)
-
     } catch (error) {
       // TODO: redirect url
       checkAxiosError(error);
@@ -251,7 +249,7 @@ app.get('/middleware/steam/return/:username',
         message = error.response.data.message
       }
 
-      resp = await instance.delete(`${LINK_ENDPOINT_HOST}/${username}/steam`);
+      let _ = await instance.delete(`${LINK_ENDPOINT_HOST}/${username}/steam`);
       
       res.redirect(url.format(
         {
