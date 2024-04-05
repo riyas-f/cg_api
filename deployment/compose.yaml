@@ -220,11 +220,32 @@ services:
       test: ["CMD", "pg_isready", "-U", "test"]
       timeout: 20s
       retries: 10
-
+  db-session:
+    build:
+      context: "./db/"
+      args:
+        - SERVICE_NAME=session
+    ports:
+      - "5432"
+    networks:
+      - session
+    volumes:
+      - ${DB_VOLUME}/db-session:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=test
+      - POSTGRES_PASSWORD_FILE=/run/secrets/db-session-secret
+    secrets:
+      - db-session-secret
+    # entrypoint: /scripts/postgres-compose-entrypoint.sh
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "test"]
+      timeout: 20s
+      retries: 10
 networks:
   auth: {}
   account: {}
   games: {}
+  session: {}
   internal: {}
   public: 
     driver: bridge
@@ -240,6 +261,8 @@ secrets:
     file: './db/secrets/db_auth_password.txt'
   db-games-secret:
     file: './db/secrets/db_games_password.txt'
+  db-session-secret:
+    file: './db/secrets/db_session_password.txt'
   smtp_password:
     file: '../middleware/mail/secrets/smtp_password.txt'
   steam_api_key:
