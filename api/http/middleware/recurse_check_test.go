@@ -65,20 +65,7 @@ func (c *UserSession) ToJSON(checkRequired bool, requiredFields []string) ([]byt
 }
 
 func TestRecurseValidityCheck(t *testing.T) {
-	_, err := PayloadCheckMiddleware(&UserSession{
-		Username: "xd234",
-		SessionMetadata: SessionMetadata{
-			GameID: 132132,
-			GameLocation: GameLocation{
-				Protocol: "nas",
-				Path:     "/games/132132/data",
-				Server: Server{
-					IP:   "127.0.0.1",
-					Port: 3000,
-				},
-			},
-		},
-	},
+	_, err := PayloadCheckMiddleware(&UserSession{},
 		"Username",
 		"SessionMetadata:GameID",
 		"SessionMetadata:GameLocation:Protocol",
