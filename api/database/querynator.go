@@ -244,7 +244,12 @@ func (q *Querynator) FindWithCondition(conditions []QueryCondition, dest interfa
 }
 
 func getField(v interface{}, ignoreEmpty bool) ([]string, []any, int) {
-	s := reflect.ValueOf(v).Elem()
+	s := reflect.ValueOf(v)
+
+	if s.Kind() == reflect.Pointer {
+		s = s.Elem()
+	}
+
 	typeOfS := s.Type()
 
 	names := make([]string, 0, 8)
@@ -256,13 +261,31 @@ func getField(v interface{}, ignoreEmpty bool) ([]string, []any, int) {
 		field := typeOfS.Field(i)
 		columnTag := field.Tag.Get("db")
 
+		k := strings.SplitAfter(columnTag, ",")[0]
+		v := s.Field(i).Interface()
+
+		fieldKind := s.Field(i).Kind()
+		fieldValue := s.Field(i).Interface()
+
+		// Check if type is a pointer
+		if s.Field(i).Kind() == reflect.Pointer {
+			fieldKind = s.Field(i).Elem().Kind()
+			fieldValue = s.Field(i).Elem().Interface()
+		}
+
+		// Recursively Resolve Struct Type if allow recurse on the struct
+		if fieldKind == reflect.Struct && columnTag != "-" {
+			names_, values_, emptyField_ := getField(fieldValue, ignoreEmpty)
+			names = append(names, names_...)
+			values = append(values, values_...)
+			emptyField += emptyField_
+			continue
+		}
+
 		// Gatekeep conditional
 		if columnTag == "-" || columnTag == "" {
 			continue
 		}
-
-		k := strings.SplitAfter(columnTag, ",")[0]
-		v := s.Field(i).Interface()
 
 		if ignoreEmpty {
 			// Check if a field is empty/has value of "zero"
