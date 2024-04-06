@@ -30,7 +30,7 @@ func CertMiddleware(rootCACerts *x509.CertPool) Middleware {
 				if err != nil {
 					return responseerror.CreateUnauthorizedError(
 						responseerror.AccessDenied,
-						responseerror.AccessDeniedMessage,
+						responseerror.MTLSFailureMessage,
 						nil,
 					)
 				}
@@ -39,7 +39,7 @@ func CertMiddleware(rootCACerts *x509.CertPool) Middleware {
 				if pemBlock == nil {
 					return responseerror.CreateUnauthorizedError(
 						responseerror.AccessDenied,
-						responseerror.AccessDeniedMessage,
+						responseerror.MTLSFailureMessage,
 						nil,
 					)
 				}
@@ -49,7 +49,7 @@ func CertMiddleware(rootCACerts *x509.CertPool) Middleware {
 				if err != nil {
 					return responseerror.CreateUnauthorizedError(
 						responseerror.AccessDenied,
-						responseerror.AccessDeniedMessage,
+						responseerror.MTLSFailureMessage,
 						nil,
 					)
 				}
@@ -64,7 +64,7 @@ func CertMiddleware(rootCACerts *x509.CertPool) Middleware {
 				if err != nil {
 					return responseerror.CreateUnauthorizedError(
 						responseerror.AccessDenied,
-						responseerror.AccessDeniedMessage,
+						responseerror.MTLSFailureMessage,
 						nil,
 					)
 				}
@@ -78,7 +78,7 @@ func CertMiddleware(rootCACerts *x509.CertPool) Middleware {
 
 			return responseerror.CreateUnauthorizedError(
 				responseerror.AccessDenied,
-				responseerror.AccessDeniedMessage,
+				responseerror.MTLSFailureMessage,
 				nil,
 			)
 		}
