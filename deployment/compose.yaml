@@ -118,6 +118,38 @@ services:
         condition: service_healthy
       proxy:
         condition: service_healthy
+
+  session:
+    build:
+      context: "../api/"
+      dockerfile: Dockerfile
+      args:
+        - SERVICE_NAME=session
+        - PORT=4500
+        - CSR_FILE_PATH=cert/request.csr
+        - CERT_FILE_PATH=cert/session-service.cert
+        - PRIVATE_KEY_PATH=cert/session-service.key
+        - PKI_HOST=localhost:5500
+      target: final
+      network: host
+    ports:
+      - "4500"
+    networks:
+      - session
+      - internal
+    environment:
+      - DB_USER=test
+      - DB_PASSWORD_FILE=/run/secrets/db-session-secret
+      - DB_DATABASE_NAME=session_db
+    entrypoint: ./scripts/compose-entrypoint.sh
+    secrets:
+      - db-session-secret
+    depends_on:
+      db-session:
+        condition: service_healthy
+      proxy:
+        condition: service_healthy
+
   # middleware service
   mail:
     build: "../middleware/mail/"
