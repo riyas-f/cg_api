@@ -289,6 +289,15 @@ func getField(v interface{}, ignoreEmpty bool) ([]string, []any, int) {
 
 		if ignoreEmpty {
 			// Check if a field is empty/has value of "zero"
+			// add check for array datatype
+			if s.Field(i).Kind() == reflect.Slice || s.Field(i).Kind() == reflect.Array {
+				if s.Field(i).Len() > 0 {
+					names = append(names, k)
+					values = append(values, v)
+				}
+				continue
+			}
+
 			if v != reflect.Zero(s.Field(i).Type()).Interface() {
 				names = append(names, k)
 				values = append(values, v)
