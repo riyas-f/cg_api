@@ -28,7 +28,12 @@
         "host": "games",
         "port": "3500",
         "scheme": "https"
+      },
+      {
+        "endpoint":"session",
+        "host":"session",
+        "port":"4500",
+        "scheme":"https"
       }
-
     ]
 }
