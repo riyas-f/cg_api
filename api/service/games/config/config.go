@@ -38,7 +38,7 @@ type Config struct {
 
 	Service struct {
 		Auth    Service `json:"auth"`
-		Session Service `json:"service"`
+		Session Service `json:"session"`
 	} `json:"service"`
 
 	Psgination struct {
