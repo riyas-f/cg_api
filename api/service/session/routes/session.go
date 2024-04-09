@@ -93,8 +93,8 @@ func createNewSessionHandler(db *sql.DB, conf interface{}, w http.ResponseWriter
 	// req := &httpx.HTTPRequest{}
 	// req, err_ := req.CreateRequest(
 	// 	"http",
-	// 	SESSION_MANAGER_HOST,
-	// 	SESSION_MANAGER_PORT,
+	// 	cf.Service.SessionManager.Host,
+	// 	cf.Service.SessionManager.Port,
 	// 	SESSION_MANAGER_CREATE_ENDPOINT,
 	// 	http.MethodPost,
 	// 	200,

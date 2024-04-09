@@ -15,7 +15,7 @@
 
     "services": {
         "session-manager": {
-            "host": "session",
+            "host": "session-manager",
             "port": "7000",
             "scheme": "https"
         },
