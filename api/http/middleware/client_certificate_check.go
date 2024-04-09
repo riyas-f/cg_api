@@ -22,6 +22,7 @@ func CertMiddleware(rootCACerts *x509.CertPool) Middleware {
 
 			if r.TLS != nil && len(r.TLS.PeerCertificates) > 0 {
 				next.ServeHTTP(w, r)
+				return nil
 			}
 
 			// client request is being redirected by the proxy
