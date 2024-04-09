@@ -2,13 +2,13 @@ package middleware
 
 import (
 	"context"
+	"crypto/tls"
 	"database/sql"
 	"net/http"
 	"strings"
 
 	httpx "github.com/AdityaP1502/Instant-Messanging/api/http"
 	"github.com/AdityaP1502/Instant-Messanging/api/http/responseerror"
-	"github.com/AdityaP1502/Instant-Messanging/api/service/auth/config"
 	"github.com/AdityaP1502/Instant-Messanging/api/service/auth/jwtutil"
 )
 
@@ -23,14 +23,12 @@ type ServiceAPI struct {
 	Scheme string `json:"scheme"`
 }
 
-func AuthMiddleware(authAPI ServiceAPI) Middleware {
+func AuthMiddleware(authAPI ServiceAPI, tlsConfig *tls.Config) Middleware {
 	return func(next http.Handler, db *sql.DB, conf interface{}) http.Handler {
 		fn := func(db *sql.DB, conf interface{}, w http.ResponseWriter, r *http.Request) responseerror.HTTPCustomError {
 			var token string
 
 			endpoint := r.Context().Value(EndpointKey).(string)
-
-			cf := conf.(*config.Config)
 
 			auth := r.Header.Get("Authorization")
 
@@ -70,11 +68,11 @@ func AuthMiddleware(authAPI ServiceAPI) Middleware {
 					Token:    token,
 					Endpoint: endpoint,
 				},
-				cf.Config,
+				tlsConfig,
 			)
 
 			if err != nil {
-				return responseerror.CreateInternalServiceError(err)
+				return err
 			}
 
 			claims := &jwtutil.Claims{}
