@@ -10,34 +10,39 @@ SELECT pg_reload_conf();
 
 CREATE DATABASE session_db;
 
-\c session_db
+\c session_db;
 
 SET TIME ZONE 'UTC';
 
-CREATE TYPE status_enum AS ENUM ('Provisioning', 'WaitingForConnection', 'Pairing
-', 'Running', 'Failed', 'TERMINATED');
+CREATE TYPE status_enum AS ENUM ('Provisioning', 'WaitingForConnection', 'Pairing', 'Running', 'Failed', 'Terminated');
 
-CREATE TABLE session_host(
-    host_id SERIAL PRIMARY KEY, 
-    host_ip VARCHAR(15) NOT NULL,
-    network_id VARCHAR(64) NOT NULL, 
-)
+
 
 CREATE TABLE user_session (
     session_id bytea PRIMARY KEY,
+    username VARCHAR(64) NOT NULL,
     request_status status_enum NOT NULL,
-    host_id INT, 
-    FOREIGN KEY(host_id) REFERENCES session_host(host_id),
     last_update TIMESTAMPTZ NOT NULL,
-    marked_for_deletion BOOLEAN NOT NULL, 
+    marked_for_deletion VARCHAR(5) NOT NULL
+);
+
+CREATE TABLE session_host(
+    host_id SERIAL PRIMARY KEY, 
+    webhook_host VARCHAR(15) NOT NULL,
+    webhook_port INT NOT NULL,
+    network_id VARCHAR(64) NOT NULL,
+    session_id bytea NOT NULL,
+    FOREIGN KEY (session_id) REFERENCES user_session(session_id)
 );
 
 CREATE TABLE session_metadata(
     metadata_id SERIAL PRIMARY KEY,
-    created_at TIMESTAMPZ NOT NULL, 
+    created_at TIMESTAMPTZ NOT NULL, 
     game_id INT NOT NULL,
-    username VARCHAR(64) NOT NULL,
+    game_location_protocol VARCHAR(64) NOT NULL,
+    game_location_server_host VARCHAR(64) NOT NULL,
+    game_location_path VARCHAR(64) NOT NULL,
     session_id bytea NOT NULL,
-    FOREIGN KEY (session_id) REFERENCES user_session(session_id),
-)
+    FOREIGN KEY (session_id) REFERENCES user_session(session_id)
+);
 
