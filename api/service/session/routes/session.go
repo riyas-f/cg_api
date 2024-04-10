@@ -180,15 +180,14 @@ func getRequestStatus(db *sql.DB, _ interface{}, w http.ResponseWriter, r *http.
 		"session_host": {"network_id,string"},
 	})
 
-	switch err {
-	case nil:
-		break
-	case sql.ErrNoRows:
+	if err != nil {
+		return responseerror.CreateInternalServiceError(err)
+	}
+
+	if len(joinTables) < 1 {
 		return responseerror.CreateNotFoundError(map[string]string{
 			"resourceName": "session_id",
 		})
-	default:
-		return responseerror.CreateInternalServiceError(err)
 	}
 
 	if claims.Username != joinTables[0].Username {
