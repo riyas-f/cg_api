@@ -60,7 +60,7 @@ func SignCertificate(csrFile io.Reader, caCRT *x509.Certificate, caPrivateKey in
 		DNSNames:     clientCSR.DNSNames,
 		IPAddresses:  clientCSR.IPAddresses,
 		NotBefore:    time.Now(),
-		NotAfter:     time.Now().Add(24 * time.Hour),
+		NotAfter:     time.Now().Add(30 * 24 * time.Hour),
 		KeyUsage:     x509.KeyUsageDigitalSignature,
 	}
 
