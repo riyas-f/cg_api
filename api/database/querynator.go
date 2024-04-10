@@ -227,7 +227,7 @@ func (q *Querynator) Find(v interface{}, dest interface{}, limit int, db *sql.DB
 func (q *Querynator) FindWithCondition(conditions []QueryCondition, dest interface{}, limit int, db *sql.DB, tableName string, returnFieldsName ...string) error {
 	dbSqlx := sqlx.NewDb(db, "postgres")
 
-	conditionStrings, conditionValues := constructConditionClause(conditions, 0)
+	conditionStrings, conditionValues := constructConditionClause(conditions, 0, false)
 
 	returnFieldsString := strings.Join(returnFieldsName, ",")
 
@@ -326,12 +326,20 @@ func transformNamesToUpdateQuery(names []string, start int, sep string) string {
 	return q[:len(q)-len(sep)]
 }
 
-func constructConditionClause(conditions []QueryCondition, offset int) ([]string, []any) {
+func constructConditionClause(conditions []QueryCondition, offset int, useExplicitCast bool) ([]string, []any) {
 	conditionStrings := make([]string, 0, len(conditions))
 	valueArgs := make([]any, 0, len(conditions))
 
 	for i, condition := range conditions {
+
 		c := fmt.Sprintf("%s.%s%s$%d", condition.TableName, condition.ColumnName, condition.Operand, i+offset+1)
+		dataType := reflect.ValueOf(condition.MatchValue).Kind()
+
+		if useExplicitCast {
+			cast := addCast(dataType)
+			c = fmt.Sprintf("%s%s", c, cast)
+		}
+
 		conditionStrings = append(conditionStrings, c)
 		valueArgs = append(valueArgs, condition.MatchValue)
 	}
