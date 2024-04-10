@@ -38,6 +38,7 @@ JWT_SECRET_KEY_FILE=$DIR/../api/secrets/jwt_secret_key.txt
 DB_ACCOUNT_SECRET_FILE=$DIR/db/secrets/db_account_password.txt
 DB_AUTH_SECRET_FILE=$DIR/db/secrets/db_auth_password.txt
 DB_GAMES_SECRET_FILE=$DIR/db/secrets/db_games_password.txt
+DB_SESSION_SECRET_FILE=$DIR/db/secrets/db_session_password.txt
 STEAM_API_KEY_FILE=$DIR/../middleware/steam-openid/secrets/steam_api_key.txt
 SMTP_PASSWORD_FILE=$DIR/../middleware/mail/secrets/smtp_password.txt
 
@@ -65,6 +66,9 @@ if ! [ -f $DB_GAMES_SECRET_FILE ]; then
     echo "$(openssl rand -base64 128)" | tr -d '\n'> $DB_GAMES_SECRET_FILE
 fi 
 
+if ! [ -f $DB_SESSION_SECRET_FILE ]; then 
+    echo "$(openssl rand -base64 128)" | tr -d '\n'> $DB_SESSION_SECRET_FILE
+fi 
 
 echo "$(openssl rand -base64 128)" | tr -d '\n'> $PASSWORD_HASH_SECRET_KEY_FILE
 echo "$(openssl rand -base64 128)" | tr -d '\n'> $JWT_SECRET_KEY_FILE
