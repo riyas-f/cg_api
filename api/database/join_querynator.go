@@ -9,12 +9,18 @@ import (
 )
 
 type JoinClause string
+type OrderType string
 
 const (
 	INNER_JOIN JoinClause = "INNER JOIN"
 	OUTER_JOIN JoinClause = "OUTER JOIN"
 	LEFT_JOIN  JoinClause = "LEFT JOIN"
 	RIGHT_JOIN JoinClause = "RIGHT JOIN"
+)
+
+const (
+	ASCENDING  OrderType = "ASC"
+	DESCENDING OrderType = "DESC"
 )
 
 type TableRelation struct {
@@ -25,8 +31,25 @@ type TableRelation struct {
 }
 
 type JoinQueryExecutor struct {
-	DriverName     string
-	tableRelations []TableRelation
+	DriverName      string
+	orderBy         string
+	orderByType     OrderType
+	limit           int
+	useExplicitCast bool
+	tableRelations  []TableRelation
+}
+
+func (e *JoinQueryExecutor) OrderBy(orderByField string, orderType OrderType) {
+	e.orderBy = orderByField
+	e.orderByType = orderType
+}
+
+func (e *JoinQueryExecutor) SetLimit(limit int) {
+	e.limit = limit
+}
+
+func (e *JoinQueryExecutor) UseExplicitCast() {
+	e.useExplicitCast = true
 }
 
 func (e *JoinQueryExecutor) AddJoinTable(joinTableName string, joinKeyName string, receiverTableName string, receiverForeignKeyName string) {
@@ -57,7 +80,10 @@ func (e *JoinQueryExecutor) Find(db *sql.DB, condition []QueryCondition, dest in
 	}
 
 	// construct where clause
-	conditionString, valueArgs := constructConditionClause(condition, 0)
+	conditionString, valueArgs := constructConditionClause(condition, 0, e.useExplicitCast)
+
+	fmt.Println(valueArgs...)
+
 	whereClause := strings.Join(conditionString, " AND ")
 
 	// construct select clause
@@ -84,6 +110,14 @@ func (e *JoinQueryExecutor) Find(db *sql.DB, condition []QueryCondition, dest in
 
 	// construct query
 	query := fmt.Sprintf(`SELECT %s FROM %s %s WHERE %s`, returnFieldsString, tableName, join, whereClause)
+
+	if e.orderBy != "" {
+		query = fmt.Sprintf("%s ORDER BY %s %s", query, e.orderBy, e.orderByType)
+	}
+
+	if e.limit > 0 {
+		query = fmt.Sprintf("%s LIMIT %d", query, e.limit)
+	}
 
 	fmt.Println(query)
 	dbX := sqlx.NewDb(db, "postgres")
