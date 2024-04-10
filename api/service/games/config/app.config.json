@@ -16,7 +16,12 @@
     "services": {
         "session": {
             "host": "session",
-            "port": "7000",
+            "port": "4500",
+            "scheme": "https"
+        },
+        "account": {
+            "host": "account",
+            "port": "8000",
             "scheme": "https"
         },
         "auth": {

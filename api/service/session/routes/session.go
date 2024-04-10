@@ -387,7 +387,6 @@ func SetSessionRoute(r *mux.Router, db *sql.DB, conf *config.Config) {
 		"SessionMetadata:GameLocation:Protocol",
 		"SessionMetadata:GameLocation:Path",
 		"SessionMetadata:GameLocation:Server:IP",
-		"SessionMetadata:GameLocation:Server:Port",
 	)
 
 	if err != nil {
