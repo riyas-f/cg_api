@@ -17,7 +17,8 @@ const (
 	TokenExpiredMessage      errorMessageTemplate = "your token has expired"
 	RefreshDeniedMessage     errorMessageTemplate = "cannot get new access token when the previous one still active"
 	ClaimsMismatchMessage    errorMessageTemplate = "refresh claims and username claims don't share the same credentials"
-	AccessDeniedMessage      errorMessageTemplate = "cannot establish trust. certificate is either invalid, revoked, or empty"
+	MTLSFailureMessage       errorMessageTemplate = "cannot establish trust. certificate is either invalid, revoked, or empty"
+	AccessDeniedMesage       errorMessageTemplate = "you don't have permission to access this route"
 )
 
 func CreateUnauthorizedError(t errorType, tmp errorMessageTemplate, namedArgs map[string]string) HTTPCustomError {

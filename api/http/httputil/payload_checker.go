@@ -17,28 +17,27 @@ import (
 // This function will ignore field with "omitempty" tag
 func CheckParametersUnity(v interface{}, requiredField []string) responseerror.HTTPCustomError {
 	// get interface field
-	s := reflect.ValueOf(v).Elem()
+	s := reflect.ValueOf(v)
+
+	if s.Kind() == reflect.Pointer {
+		s = s.Elem()
+	}
+
 	typeS := s.Type()
-	// typeOfS := s.Type()
-
-	// for i := 0; i < typeOfS.NumField(); i++ {
-	// 	field := typeOfS.Field(i)
-	// 	jsonTag := field.Tag.Get("json")
-
-	// 	// Gatekeep conditional
-	// 	if jsonTag == "-" || jsonTag == "" {
-	// 		continue
-	// 	}
-
-	// 	if x := strings.SplitAfter(jsonTag, ","); len(x) > 1 {
-	// 		if x[1] == "omitempty" {
-	// 			continue
-	// 		}
-	// 	}
-
-	// 	a := s.Field(i).Interface()
+	fieldMap := make(map[string][]string)
 
 	for _, field := range requiredField {
+		splitFieldName := strings.SplitN(field, ":", 2)
+
+		// Add the field to recurse path
+		if len(splitFieldName) > 1 {
+			fieldMap[splitFieldName[0]] = append(fieldMap[splitFieldName[0]], splitFieldName[1])
+			continue
+		}
+
+		// No need to recursively check the value
+		field = splitFieldName[0]
+
 		v := s.FieldByName(field)
 		if v.IsValid() {
 			// check if a field is empty
@@ -71,6 +70,16 @@ func CheckParametersUnity(v interface{}, requiredField []string) responseerror.H
 			}
 		}
 
+	}
+
+	// Recursively resolve field name and check it's value
+	for structName, fieldNames := range fieldMap {
+		v := s.FieldByName(structName).Interface()
+		err := CheckParametersUnity(v, fieldNames)
+		// Short circuit when found error
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

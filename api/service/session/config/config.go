@@ -2,9 +2,11 @@ package config
 
 import (
 	"crypto/tls"
+	"fmt"
 	"os"
 	"path/filepath"
 
+	"github.com/AdityaP1502/Instant-Messanging/api/http/middleware"
 	"github.com/AdityaP1502/Instant-Messanging/api/jsonutil"
 )
 
@@ -14,11 +16,12 @@ var (
 	DB_DATABASE string = os.Getenv("DB_DATABASE_NAME")
 )
 
-type Service struct {
-	Host   string `json:"host"`
-	Port   int    `json:"port,string"`
-	Scheme string `json:"scheme"`
-}
+// type Service struct {
+// 	Host   string `json:"host"`
+// 	Port   int    `json:"port,string"`
+// 	Scheme string `json:"scheme"`
+// }
+
 type Config struct {
 	ServiceName string `json:"service_name"`
 	Version     string `json:"version"`
@@ -37,14 +40,9 @@ type Config struct {
 	} `json:"server"`
 
 	Service struct {
-		Auth    Service `json:"auth"`
-		Session Service `json:"session"`
-	} `json:"service"`
-
-	Psgination struct {
-		DefaultLimit int `json:"default_limit,string"`
-		MaxLimit     int `json:"max_limit,string"`
-	}
+		Auth           middleware.ServiceAPI `json:"auth"`
+		SessionManager middleware.ServiceAPI `json:"session-manager"`
+	} `json:"services"`
 
 	*tls.Config
 }
@@ -70,6 +68,8 @@ func ReadJSONConfiguration(path string) (*Config, error) {
 	defer configFile.Close()
 
 	err = jsonutil.DecodeJSON(configFile, &config)
+
+	fmt.Println(config)
 
 	if err != nil {
 		return nil, err

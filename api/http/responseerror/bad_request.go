@@ -18,6 +18,8 @@ const (
 	CallsStatusInvalid   errorType = "invalid_status_value"
 	SteamNotLinked       errorType = "steam_not_linked"
 	SteamAlreadyLinked   errorType = "steam_has_been_linked"
+	MalformedSessionID   errorType = "malformed_uuidv7_id"
+	InvalidPIN           errorType = "invalid_pin"
 )
 
 const (
@@ -34,6 +36,8 @@ const (
 	StatusInvalidMessage        errorMessageTemplate = "trying to update status to {{.reqStatus}} when user status is {{.status}}"
 	SteamAlreadyLinkedMessage   errorMessageTemplate = "this account has been linked to steam"
 	SteamNotLinkedMessage       errorMessageTemplate = "account has not been linked to steam yet"
+	MalformedSessionIDMessage   errorMessageTemplate = "{{.id}} cannot be parsed as a valid uuidv7 id "
+	InvalidPINMessage           errorMessageTemplate = "{{.pin}} is invalid"
 )
 
 // create response error with 400 Code and name string(t)

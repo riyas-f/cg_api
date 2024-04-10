@@ -65,6 +65,17 @@ func (e *JoinQueryExecutor) Find(db *sql.DB, condition []QueryCondition, dest in
 
 	for k, v := range returnFields {
 		for _, column := range v {
+			nameSplit := strings.SplitN(column, ",", 2)
+			if len(nameSplit) > 1 {
+				s, err := constructDefaultValue(fmt.Sprintf("%s.%s", k, nameSplit[0]), nameSplit[0], nameSplit[1])
+
+				if err != nil {
+					return err
+				}
+
+				fields = append(fields, s)
+				continue
+			}
 			fields = append(fields, fmt.Sprintf("%s.%s", k, column))
 		}
 	}
@@ -82,6 +93,19 @@ func (e *JoinQueryExecutor) Find(db *sql.DB, condition []QueryCondition, dest in
 	return err
 }
 
+func constructDefaultValue(returnFieldsName string, columnName string, dataType string) (string, error) {
+	switch dataType {
+	case "string":
+		return fmt.Sprintf("COALESCE(%s, '') as %s", returnFieldsName, columnName), nil
+	case "int":
+		return fmt.Sprintf("COALESCE(%s, 0) as %s", returnFieldsName, columnName), nil
+	case "bool":
+		return fmt.Sprintf("COALESCE(%s, false) as %s", returnFieldsName, columnName), nil
+	default:
+		return "", fmt.Errorf("dataType isn't supported")
+
+	}
+}
 func constructJoinClause(sourceTable string, sourceID string, receiverTable string, receiverID string, joinClause JoinClause) string {
 	clause := fmt.Sprintf("%s %s ON %s.%s = %s.%s", joinClause, sourceTable, sourceTable, sourceID, receiverTable, receiverID)
 	return clause

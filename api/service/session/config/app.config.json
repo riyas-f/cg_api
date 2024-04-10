@@ -1,0 +1,28 @@
+{
+    "service_name": "Instant-Messaging Games Service",
+    "version": "v1",
+    "database": {
+        "driver": "postgres",
+        "host": "db-session",
+        "port": "5432"
+    },
+
+    "server": {
+        "host": "0.0.0.0",
+        "port": "4500",
+        "secure": "true"
+    },
+
+    "services": {
+        "session-manager": {
+            "host": "session-manager",
+            "port": "7000",
+            "scheme": "https"
+        },
+        "auth": {
+            "host": "auth",
+            "port": "6000",
+            "scheme": "https"
+        }
+    }
+}
