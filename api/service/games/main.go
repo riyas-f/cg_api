@@ -16,6 +16,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+	"github.com/rs/cors"
 )
 
 var (
@@ -104,6 +105,16 @@ func main() {
 	// }).Methods("GET")
 
 	// wait until the server has ended
+
+	corsHandler := cors.New(cors.Options{
+		AllowedOrigins:   []string{"*"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
+		AllowedHeaders:   []string{"Content-Type", "Authorization"},
+		ExposedHeaders:   []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           86400, // time in seconds
+	}).Handler(r)
+
 	var wg sync.WaitGroup
 	wg.Add(1)
 
@@ -125,7 +136,7 @@ func main() {
 
 			srv := http.Server{
 				Addr:      fmt.Sprintf("%s:%d", config.Server.Host, config.Server.Port),
-				Handler:   r,
+				Handler:   corsHandler,
 				TLSConfig: tlsConfig,
 			}
 
@@ -133,7 +144,7 @@ func main() {
 		} else {
 			err := http.ListenAndServe(
 				fmt.Sprintf("%s:%d", config.Server.Host, config.Server.Port),
-				r,
+				corsHandler,
 			)
 
 			if err != nil {
