@@ -146,7 +146,7 @@ func registerHandler(db *sql.DB, conf interface{}, w http.ResponseWriter, r *htt
 	if err != nil {
 		tx.Rollback()
 		if err, ok := err.(*pq.Error); ok {
-			if err.Code == "2305" {
+			if err.Code == "23505" {
 				// Unique Constraint Violation
 				// Format Key (column)=(value) already exists.
 				s := strings.SplitN(err.Detail, " ", 2)
