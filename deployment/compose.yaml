@@ -42,6 +42,7 @@ services:
       - auth
       - internal
     environment:
+      - TEST_MODE=${TEST_MODE}
       - DB_USER=test
       - DB_PASSWORD_FILE=/run/secrets/db-auth-secret
       - DB_DATABASE_NAME=auth_db
@@ -76,6 +77,7 @@ services:
       - internal
     environment:
       - DB_USER=test
+      - TEST_MODE=${TEST_MODE}
       - DB_PASSWORD_FILE=/run/secrets/db-account-secret
       - DB_DATABASE_NAME=account_db
       - HASH_SECRET_KEY_FILE=/run/secrets/password-hash-key
@@ -107,6 +109,7 @@ services:
       - games
       - internal
     environment:
+      - TEST_MODE=${TEST_MODE}
       - DB_USER=test
       - DB_PASSWORD_FILE=/run/secrets/db-games-secret
       - DB_DATABASE_NAME=games_db
@@ -138,6 +141,7 @@ services:
       - session
       - internal
     environment:
+      - TEST_MODE=${TEST_MODE}
       - DB_USER=test
       - DB_PASSWORD_FILE=/run/secrets/db-session-secret
       - DB_DATABASE_NAME=session_db
