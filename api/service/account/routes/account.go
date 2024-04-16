@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/AdityaP1502/Instant-Messanging/api/database"
 	"github.com/AdityaP1502/Instant-Messanging/api/date"
@@ -19,6 +20,7 @@ import (
 	"github.com/AdityaP1502/Instant-Messanging/api/service/account/pwdutil"
 	"github.com/gorilla/mux"
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 )
 
 var querynator = &database.Querynator{}
@@ -99,32 +101,34 @@ func registerHandler(db *sql.DB, conf interface{}, w http.ResponseWriter, r *htt
 	body := r.Context().Value(middleware.PayloadKey).(*payload.Account)
 
 	// Check username and email exist or not
-	exist, err := querynator.IsExists(&payload.Account{Email: body.Email}, db, "account")
 
-	if err != nil {
-		return responseerror.CreateInternalServiceError(err)
-	}
+	// This can caused a race condition
+	// exist, err := querynator.IsExists(&payload.Account{Email: body.Email}, db, "account")
 
-	if exist {
-		return responseerror.CreateBadRequestError(
-			responseerror.EmailExists,
-			responseerror.EmailsExistMessage,
-			nil,
-		)
-	}
+	// if err != nil {
+	// 	return responseerror.CreateInternalServiceError(err)
+	// }
 
-	exist, err = querynator.IsExists(&payload.Account{Username: body.Username}, db, "account")
-	if err != nil {
-		return responseerror.CreateInternalServiceError(err)
-	}
+	// if exist {
+	// 	return responseerror.CreateBadRequestError(
+	// 		responseerror.EmailExists,
+	// 		responseerror.EmailsExistMessage,
+	// 		nil,
+	// 	)
+	// }
 
-	if exist {
-		return responseerror.CreateBadRequestError(
-			responseerror.UsernameExists,
-			responseerror.UsernameExistMessage,
-			nil,
-		)
-	}
+	// exist, err = querynator.IsExists(&payload.Account{Username: body.Username}, db, "account")
+	// if err != nil {
+	// 	return responseerror.CreateInternalServiceError(err)
+	// }
+
+	// if exist {
+	// 	return responseerror.CreateBadRequestError(
+	// 		responseerror.UsernameExists,
+	// 		responseerror.UsernameExistMessage,
+	// 		nil,
+	// 	)
+	// }
 
 	newUser, err := payload.NewRegisteredAccountPayload(body.Username, body.Name, body.Email, body.Password, cf.Hash.SecretKeyRaw)
 
@@ -141,6 +145,23 @@ func registerHandler(db *sql.DB, conf interface{}, w http.ResponseWriter, r *htt
 	_, err = querynator.Insert(newUser, tx, "account", "account_id")
 	if err != nil {
 		tx.Rollback()
+		if err, ok := err.(*pq.Error); ok {
+			if err.Code == "23505" {
+				// Unique Constraint Violation
+				// Format Key (column)=(value) already exists.
+				s := strings.SplitN(err.Detail, " ", 2)
+
+				return responseerror.CreateBadRequestError(
+					responseerror.NonUniqueValue,
+					responseerror.NonUniqueValueMessage,
+					map[string]string{
+						"message": s[1],
+					},
+				)
+
+			}
+		}
+
 		return responseerror.CreateInternalServiceError(err)
 	}
 
