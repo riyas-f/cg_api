@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/AdityaP1502/Instant-Messanging/api/database"
@@ -22,6 +23,7 @@ import (
 )
 
 var querynator = &database.Querynator{}
+var TEST_MODE bool = os.Getenv("TEST_MODE") == "TRUE"
 
 type RegisterResponse struct {
 	Status  string `json:"status"`
@@ -136,6 +138,11 @@ func registerHandler(db *sql.DB, conf interface{}, w http.ResponseWriter, r *htt
 
 	if err != nil {
 		return responseerror.CreateInternalServiceError(err)
+	}
+
+	if TEST_MODE {
+		// SKIP OTP VERIFICATION ON TEST MODE
+		newUser.IsActive = strconv.FormatBool(true)
 	}
 
 	_, err = querynator.Insert(newUser, tx, "account", "account_id")
