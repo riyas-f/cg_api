@@ -17,7 +17,7 @@ SET TIME ZONE 'UTC';
 
 CREATE TABLE account(
 	account_id SERIAL PRIMARY KEY,
-	username VARCHAR(64) NOT NULL,
+	username VARCHAR(64) UNIQUE NOT NULL,
 	name VARCHAR(64) NOT NULL,
 	password VARCHAR(80) NOT NULL,
     password_salt VARCHAR(64) NOT NULL,
@@ -28,7 +28,7 @@ CREATE TABLE account(
 
 CREATE TABLE user_otp(
     otp_id SERIAL PRIMARY KEY,
-	email  VARCHAR(64) NOT NULL,
+	email VARCHAR(64) UNIQUE NOT NULL,
 	expired_at TIMESTAMPTZ NOT NULL,
 	otp CHAR(6) NOT NULL,
 	last_resend TIMESTAMPTZ NOT NULL,

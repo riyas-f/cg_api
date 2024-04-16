@@ -7,8 +7,7 @@ import (
 const (
 	MissingParameter     errorType = "missing_parameter"
 	HeaderValueMistmatch errorType = "header_value_mismatch"
-	UsernameExists       errorType = "username_exists"
-	EmailExists          errorType = "email_exists"
+	NonUniqueValue       errorType = "non_unique_value"
 	UsernameInvalid      errorType = "username_invalid"
 	PasswordWeak         errorType = "password_weak"
 	EmailInvalid         errorType = "invalid_email"
@@ -38,6 +37,7 @@ const (
 	SteamNotLinkedMessage       errorMessageTemplate = "account has not been linked to steam yet"
 	MalformedSessionIDMessage   errorMessageTemplate = "{{.id}} cannot be parsed as a valid uuidv7 id "
 	InvalidPINMessage           errorMessageTemplate = "{{.pin}} is invalid"
+	NonUniqueValueMessage       errorMessageTemplate = "{{.message}}"
 )
 
 // create response error with 400 Code and name string(t)
