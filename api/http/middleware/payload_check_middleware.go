@@ -64,7 +64,6 @@ func checkFieldsValidity(template interface{}, requiredFields []string) error {
 }
 
 func PayloadCheckMiddleware(template httpx.Payload, requiredFields ...string) (Middleware, error) {
-	var payload httpx.Payload
 
 	p := reflect.ValueOf(template)
 
@@ -100,6 +99,8 @@ func PayloadCheckMiddleware(template httpx.Payload, requiredFields ...string) (M
 	}
 
 	return func(next http.Handler, db *sql.DB, config interface{}) http.Handler {
+		// var payload httpx.Payload
+
 		fn := func(db *sql.DB, config interface{}, w http.ResponseWriter, r *http.Request) responseerror.HTTPCustomError {
 
 			if r.Header.Get("Content-Type") != "application/json" {
@@ -113,7 +114,7 @@ func PayloadCheckMiddleware(template httpx.Payload, requiredFields ...string) (M
 			}
 
 			// create a new struct with the same type as template
-			payload = reflect.New(sType).Interface().(httpx.Payload)
+			payload := reflect.New(sType).Interface().(httpx.Payload)
 
 			if r.Body == nil {
 				return responseerror.CreateBadRequestError(
