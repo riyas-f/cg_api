@@ -172,6 +172,25 @@ func registerHandler(db *sql.DB, conf interface{}, w http.ResponseWriter, r *htt
 		return responseerror.CreateInternalServiceError(err)
 	}
 
+	if TEST_MODE {
+		resp := &RegisterResponse{
+			Status:  "success",
+			Message: "your account is successfully created. test mode is activated, OTP is disabled",
+		}
+
+		jsonResponse, err := jsonutil.EncodeToJson(resp)
+
+		if err != nil {
+			tx.Rollback()
+			return responseerror.CreateInternalServiceError(err)
+		}
+
+		tx.Commit()
+
+		w.Write(jsonResponse)
+		return nil
+	}
+
 	otpData, err := payload.NewOTPPayload(body.Email, cf.OTP.OTPDurationMinutes)
 
 	if err != nil {
