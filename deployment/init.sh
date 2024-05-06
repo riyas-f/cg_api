@@ -179,7 +179,8 @@ GCP_PRIVATE_KEY_SECRET_NAME="ROOT_CA_PRIVATE_KEY"
 GCP_PRIVATE_KEY_PASSPHRASE_SECRET_NAME="ROOT_CA_KEY_PASSPHRASE"
 
 echo "Deployment: $deployment"
-echo "Use Cache: $noCache"
+useCache=$((!$noCache))
+echo "Use Cache: $useCache"
 
 # Retrieve GCP instance Public IP
 if [ "$deployment" = "GCP" ]; then
