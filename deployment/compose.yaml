@@ -10,6 +10,7 @@ services:
         - CERT_FILE_PATH=cert/proxy-service.cert
         - PRIVATE_KEY_PATH=cert/proxy-service.key
         - PKI_HOST=localhost:5500
+        - USE_HTTPS=${SECURE}
       target: final
       network: host
     ports:
@@ -17,8 +18,10 @@ services:
     networks:
       - internal
       - public
+    environment:
+      - SCHEME=${SCHEME} 
     healthcheck:
-      test: curl -k --fail https://proxy:3000/health || exit 1
+      test: curl -k --fail ${SCHEME}://proxy:3000/health || exit 1
       interval: 60s
       timeout: 30s
       retries: 5

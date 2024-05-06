@@ -30,6 +30,8 @@ ARG SERVICE_NAME
 ARG PORT
 ARG CERT_FILE_PATH
 ARG PRIVATE_KEY_PATH
+ARG USE_HTTPS
+
 
 ENV CERT_FILE_PATH ${CERT_FILE_PATH}
 ENV PRIVATE_KEY_PATH ${PRIVATE_KEY_PATH}
@@ -45,7 +47,9 @@ COPY --from=build /github.com/AdityaP1502/Instant-Messanging/reverse_proxy/app .
 COPY --from=build /github.com/AdityaP1502/Instant-Messanging/reverse_proxy/config/app.config.json config/app.config.json
 COPY --from=build /github.com/AdityaP1502/Instant-Messanging/reverse_proxy/cert/ cert/
 
-RUN apk --update --no-cache add curl
+RUN apk --update --no-cache add curl jq
+RUN if [ ${USE_HTTPS} -eq 0 ]; then jq '.server.secure = "false"' config/app.config.json > temp.json && mv temp.json config/app.config.json; fi
+
 
 EXPOSE $PORT
 CMD ["./app"]
