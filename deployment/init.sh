@@ -1,23 +1,23 @@
 # #!/bin/bash
 
-# health_check() {
-#     # Endpoint for health check
-#     local ENDPOINT=$1
+health_check() {
+    # Endpoint for health check
+    local ENDPOINT=$1
 
-#     while true; do
-#         # Send a request to the endpoint
-#         local RESPONSE=$(curl -k -s -o /dev/null -w "%{http_code}" $ENDPOINT)
+    while true; do
+        # Send a request to the endpoint
+        local RESPONSE=$(curl -k -s -o /dev/null -w "%{http_code}" $ENDPOINT)
 
-#         # Check if the endpoint responded with HTTP 200
-#         if [ $RESPONSE -eq 200 ]; then
-#             echo "Endpoint responded successfully. Exiting."
-#             return
-#         else
-#             echo "Endpoint check failed with HTTP status: $RESPONSE. Retrying in 5 seconds."
-#             sleep 5
-#         fi
-#     done
-# }
+        # Check if the endpoint responded with HTTP 200
+        if [ $RESPONSE -eq 200 ]; then
+            echo "Endpoint responded successfully. Exiting."
+            return
+        else
+            echo "Endpoint check failed with HTTP status: $RESPONSE. Retrying in 5 seconds."
+            sleep 5
+        fi
+    done
+}
 
 # # retrieve GCP instance Public IP
 # ZONE="asia-southeast2-a"
@@ -44,12 +44,10 @@
 # mkdir -p $DIR/../middleware/steam-openid/secrets
 # mkdir -p $DIR/../middleware/mail/secrets
 
-# set -e
+
 
 # INSTANCE_NAME=$(curl -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/name)
 # export HOST=$(gcloud compute instances describe $INSTANCE_NAME --zone=$ZONE --format='get(networkInterfaces[0].accessConfigs[0].natIP)')
-
-
 
 
 # # access secret manager
@@ -198,6 +196,8 @@ mkdir -p $DIR/db/secrets
 mkdir -p $DIR/../middleware/mail/secrets
 mkdir -p $DIR/../middleware/steam-openid/secrets
 mkdir -p $DIR/../middleware/mail/secrets
+
+set -e
 
 # Generate secret files if not exists
 # don't change when the file already exists
