@@ -198,12 +198,12 @@ elif [ -z "$INSTANCE_HOST" ]; then
     fi
 fi
 
-if [ -n "$useHTTPS" ]; then
-     SECURE=1
-     SCHEME="https"
+if [ secure ]; then
+    export SECURE=1
+    export SCHEME="https"
 else
-    SECURE=0
-     SCHEME="http"
+    export SECURE=0
+    export SCHEME="http"
 fi
 
 echo "HOST: $INSTANCE_HOST"
