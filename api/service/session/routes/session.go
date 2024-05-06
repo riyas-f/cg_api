@@ -416,7 +416,7 @@ func SetSessionRoute(r *mux.Router, db *sql.DB, conf *config.Config) {
 	subrouter.Handle("/{session_id}/status", middleware.UseMiddleware(db, conf, getStatus, authMiddleware))
 
 	startConnection := httpx.CreateHTTPHandler(db, conf, startConnectionEstablishmentHandler)
-	subrouter.Handle("/{session_id}/connection/start", middleware.UseMiddleware(db, conf, startConnection, certMiddleware, startConnectionPayloadMiddleware))
+	subrouter.Handle("/{session_id}/connection/start", middleware.UseMiddleware(db, conf, startConnection, startConnectionPayloadMiddleware))
 
 	pair := httpx.CreateHTTPHandler(db, conf, pairHandler)
 	subrouter.Handle("/{session_id}/pair", middleware.UseMiddleware(db, conf, pair, authMiddleware, pinPairPayloadMiddleware))
