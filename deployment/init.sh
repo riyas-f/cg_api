@@ -114,15 +114,16 @@ deployment="local"
 instanceHost=""
 
 usage() {
-    echo "Usage: $0 [-s|--skipBuild] [-n|--noCache] [-h|--help]"
+    echo "Usage: $0 [-s|--skipBuild] [-n|--noCache] [-S|--secure] [-d|--deployment <value>] [-i|--instanceHost <value>] [-h|--help]"
     echo "Options:"
     echo "  -s, --skipBuild    Skip the build process"
     echo "  -n, --noCache      Do not use cache during build"
+    echo "  -S, --secure       Enable secure mode"
+    echo "  -d, --deployment   Set deployment (default: local)"
+    echo "  -i, --instanceHost Set instance host"
     echo "  -h, --help         Display this help message"
     exit 1
 }
-
-
 
 # Parse command line options
 while [[ $# -gt 0 ]]; do
@@ -135,6 +136,20 @@ while [[ $# -gt 0 ]]; do
             ;;
         -n|--noCache)
             noCache=true
+            shift
+            ;;
+        -S|--secure)
+            secure=true
+            shift
+            ;;
+        -d|--deployment)
+            deployment="$2"
+            shift
+            shift
+            ;;
+        -i|--instanceHost)
+            instanceHost="$2"
+            shift
             shift
             ;;
         -h|--help)
