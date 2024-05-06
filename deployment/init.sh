@@ -22,15 +22,15 @@ health_check() {
 # # retrieve GCP instance Public IP
 # ZONE="asia-southeast2-a"
 
-# # get the directory where the script is located
-# SOURCE=${BASH_SOURCE[0]}
-# while [ -L "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
-#   DIR=$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )
-#   SOURCE=$(readlink "$SOURCE")
-#   [[ $SOURCE != /* ]] && SOURCE=$DIR/$SOURCE # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
-# done
+# get the directory where the script is located
+SOURCE=${BASH_SOURCE[0]}
+while [ -L "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
+  DIR=$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )
+  SOURCE=$(readlink "$SOURCE")
+  [[ $SOURCE != /* ]] && SOURCE=$DIR/$SOURCE # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
+done
 
-# DIR=$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )
+DIR=$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )
 
 # # set up secret file
 # PASSWORD_HASH_SECRET_KEY_FILE=$DIR/../api/secrets/password_hash_key.txt
@@ -137,8 +137,6 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
-
-DIR=$(dirname "$0")
 
 # Define paths
 PASSWORD_HASH_SECRET_KEY_FILE="$DIR/../api/secrets/password_hash_key.txt"
