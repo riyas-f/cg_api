@@ -223,6 +223,7 @@ fi
 
 # Access Secret Manager
 gcloud secrets versions access latest --secret=SMTP_CONFIG_PASSWORD > $SMTP_PASSWORD_FILE
+gcloud secrets versions access latest --secret=STEAM_API_KEY > $STEAM_API_KEY_FILE
 
 curl $GCP_CERT_FILE_BUCKET_URL -o "$ROOT_CA_VOLUME/root-ca.crt"
 gcloud secrets versions access latest --secret="$GCP_PRIVATE_KEY_SECRET_NAME" > "$ROOT_CA_VOLUME/root-ca.key"
