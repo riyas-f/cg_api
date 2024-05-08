@@ -301,7 +301,7 @@ func pairHandler(db *sql.DB, conf interface{}, w http.ResponseWriter, r *http.Re
 
 	// get the host id
 	host := &payload.Webhook{}
-	err = querynator.FindOne(&payload.SessionHost{SessionID_: sessionID}, host, db, "webhook_host", "webhook_port")
+	err = querynator.FindOne(&payload.SessionHost{SessionID_: sessionID}, host, db, "session_host", "webhook_host", "webhook_port")
 	switch err {
 	case nil:
 		break
