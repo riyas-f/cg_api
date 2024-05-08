@@ -10,8 +10,8 @@ const {instance} = require('./configure_https_agent');
 // TODO: THIS IS STILL A CRUDE IMPLEMENTATION OF 
 // STEAM ACCOUNT LINK
 
-const SYNC_ENDPOINT_HOST = 'https://proxy:3000/v1/games'
-const LINK_ENDPOINT_HOST = `https://proxy:3000/v1/account`
+const SYNC_ENDPOINT_HOST = 'https://games:3500/v1/games'
+const LINK_ENDPOINT_HOST = `https://account:8000/v1/account`
 
 const port = process.env.port || 9000
 const host = process.env.host || 'localhost'
