@@ -31,6 +31,7 @@ while [ -L "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symli
 done
 
 DIR=$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )
+echo $DIR
 
 # # set up secret file
 # PASSWORD_HASH_SECRET_KEY_FILE=$DIR/../api/secrets/password_hash_key.txt
@@ -161,17 +162,17 @@ echo "Use Cache: $useCache"
 # Retrieve GCP instance Public IP
 if [ "$deployment" = "GCP" ]; then
     INSTANCE_NAME=$(curl -H "Metadata-Flavor: Google" -s "http://metadata.google.internal/computeMetadata/v1/instance/name")
-    INSTANCE_HOST=$(gcloud compute instances describe $INSTANCE_NAME --zone=$ZONE --format='get(networkInterfaces[0].accessConfigs[0].natIP)')
+    export INSTANCE_HOST=$(gcloud compute instances describe $INSTANCE_NAME --zone=$ZONE --format='get(networkInterfaces[0].accessConfigs[0].natIP)')
 elif [ -z "$INSTANCE_HOST" ]; then
     if [ -n "$instanceHost" ]; then
-        INSTANCE_HOST=$instanceHost
+        export INSTANCE_HOST=$instanceHost
     else
         read -p "Host environment variable is empty. Please input the host of the machine:" read
         if [ -z "$read" ]; then
             echo "Received empty string as host. Defaulting to 127.0.0.1"
             read="127.0.0.1"
         fi
-        INSTANCE_HOST=$read
+        export INSTANCE_HOST=$read
     fi
 fi
 

@@ -4,7 +4,7 @@ services:
       context: "../reverse_proxy/"
       dockerfile: Dockerfile
       args:
-        - HOST=${HOST}
+        - HOST=${INSTANCE_HOST}
         - PORT=3000
         - CSR_FILE_PATH=cert/request.csr
         - CERT_FILE_PATH=cert/proxy-service.cert
