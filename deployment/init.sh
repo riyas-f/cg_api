@@ -175,7 +175,7 @@ elif [ -z "$INSTANCE_HOST" ]; then
     fi
 fi
 
-if [ secure ]; then
+if [ "$secure" = true ]; then
     export SECURE=1
     export SCHEME="https"
 else
