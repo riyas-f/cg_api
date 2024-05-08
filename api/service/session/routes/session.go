@@ -300,7 +300,7 @@ func pairHandler(db *sql.DB, conf interface{}, w http.ResponseWriter, r *http.Re
 	body := r.Context().Value(middleware.PayloadKey).(*payload.SessionPIN)
 
 	// get the host id
-	host := &payload.SessionHost{}
+	host := &payload.Webhook{}
 	err = querynator.FindOne(&payload.SessionHost{SessionID_: sessionID}, host, db, "session_host", "webhook_host")
 	switch err {
 	case nil:
@@ -324,7 +324,7 @@ func pairHandler(db *sql.DB, conf interface{}, w http.ResponseWriter, r *http.Re
 		return responseerror.CreateInternalServiceError(err)
 	}
 
-	port, err := strconv.Atoi(host.Webhook.Port)
+	port, err := strconv.Atoi(host.Port)
 
 	if err != nil {
 		return responseerror.CreateInternalServiceError(err)
@@ -333,7 +333,7 @@ func pairHandler(db *sql.DB, conf interface{}, w http.ResponseWriter, r *http.Re
 	req := &httpx.HTTPRequest{}
 	req, err = req.CreateRequest(
 		"http",
-		host.Webhook.Host,
+		host.Host,
 		port,
 		"/pin",
 		http.MethodPost,
