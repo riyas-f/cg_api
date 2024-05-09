@@ -87,6 +87,7 @@ echo $DIR
 skipBuild=false
 noCache=false
 secure=false
+ignoreLookup=false
 deployment="local"
 instanceHost=""
 
@@ -95,6 +96,7 @@ usage() {
     echo "Options:"
     echo "  -s, --skipBuild    Skip the build process"
     echo "  -n, --noCache      Do not use cache during build"
+    echo "  -I, --ignoreLookup Skip getting configuration file stored in the cloud"
     echo "  -S, --secure       Enable secure mode"
     echo "  -d, --deployment   Set deployment (default: local)"
     echo "  -i, --instanceHost Set instance host"
@@ -129,6 +131,10 @@ while [[ $# -gt 0 ]]; do
             shift
             shift
             ;;
+        -I|--ignoreLookup)
+            ignoreLookup=true
+            shift
+            ;;
         -h|--help)
             usage
             ;;
@@ -158,6 +164,7 @@ GCP_PRIVATE_KEY_PASSPHRASE_SECRET_NAME="ROOT_CA_KEY_PASSPHRASE"
 echo "Deployment: $deployment"
 useCache=$((!$noCache))
 echo "Use Cache: $useCache"
+echo "Ignore lookup: $ignoreLookup"
 
 # Retrieve GCP instance Public IP
 if [ "$deployment" = "GCP" ]; then
@@ -222,12 +229,14 @@ if [ "$skipBuild" = false ]; then
 fi
 
 # Access Secret Manager
-gcloud secrets versions access latest --secret=SMTP_CONFIG_PASSWORD > $SMTP_PASSWORD_FILE
-gcloud secrets versions access latest --secret=STEAM_API_KEY > $STEAM_API_KEY_FILE
+if [ "$ignoreLookup" = false ]; then  
+    gcloud secrets versions access latest --secret=SMTP_CONFIG_PASSWORD > $SMTP_PASSWORD_FILE
+    gcloud secrets versions access latest --secret=STEAM_API_KEY > $STEAM_API_KEY_FILE
 
-curl $GCP_CERT_FILE_BUCKET_URL -o "$ROOT_CA_VOLUME/root-ca.crt"
-gcloud secrets versions access latest --secret="$GCP_PRIVATE_KEY_SECRET_NAME" > "$ROOT_CA_VOLUME/root-ca.key"
-gcloud secrets versions access latest --secret="$GCP_PRIVATE_KEY_PASSPHRASE_SECRET_NAME" | tr -d '\r\n' > "$ROOT_CA_VOLUME/passphrase"
+    curl $GCP_CERT_FILE_BUCKET_URL -o "$ROOT_CA_VOLUME/root-ca.crt"
+    gcloud secrets versions access latest --secret="$GCP_PRIVATE_KEY_SECRET_NAME" > "$ROOT_CA_VOLUME/root-ca.key"
+    gcloud secrets versions access latest --secret="$GCP_PRIVATE_KEY_PASSPHRASE_SECRET_NAME" | tr -d '\r\n' > "$ROOT_CA_VOLUME/passphrase"
+fi
 
 echo "Starting certificate manager service. Please wait..."
 
