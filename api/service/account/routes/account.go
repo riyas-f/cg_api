@@ -38,8 +38,9 @@ type Token struct {
 }
 
 type LoginResponse struct {
-	Status string `json:"status"`
-	Token  Token  `json:"token"`
+	Status   string `json:"status"`
+	Username string `json:"username"`
+	Token    Token  `json:"token"`
 }
 
 type GenericResponse struct {
@@ -328,7 +329,7 @@ func loginHandler(db *sql.DB, conf interface{}, w http.ResponseWriter, r *http.R
 		return err.(responseerror.HTTPCustomError)
 	}
 
-	json, err := jsonutil.EncodeToJson(&LoginResponse{Status: "success", Token: token})
+	json, err := jsonutil.EncodeToJson(&LoginResponse{Status: "success", Username: user.Username, Token: token})
 
 	if err != nil {
 		return responseerror.CreateInternalServiceError(err)
