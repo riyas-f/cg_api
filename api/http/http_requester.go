@@ -56,13 +56,14 @@ func (h *HTTPRequest) Send(dest interface{}) responseerror.HTTPCustomError {
 	resp, err := client.Do(&h.Request)
 
 	if err != nil {
+		fmt.Println("cannot send request to the endpoint")
 		return responseerror.CreateInternalServiceError(err)
 	}
 
-	defer resp.Body.Close()
-
 	respBytes, err := io.ReadAll(resp.Body)
 	fmt.Println(string(respBytes))
+
+	defer resp.Body.Close()
 
 	if resp.StatusCode != h.SuccessStatusCode {
 		// if not provided a destination or that the status code don't match
