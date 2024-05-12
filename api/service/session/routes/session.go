@@ -129,7 +129,7 @@ func createNewSessionHandler(db *sql.DB, conf interface{}, w http.ResponseWriter
 			return err_
 		}
 
-		w.WriteHeader(req.ReturnedStatusCode)
+		w.WriteHeader(err_.Get().Code)
 		w.Write(req.Payload)
 		return nil
 	}
