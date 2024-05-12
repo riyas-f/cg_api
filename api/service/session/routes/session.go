@@ -21,9 +21,8 @@ import (
 )
 
 const (
-	SESSION_MANAGER_HOST            string = ""
-	SESSION_MANAGER_PORT            int    = 5000
-	SESSION_MANAGER_CREATE_ENDPOINT        = "/v1/vms"
+	SESSION_MANAGER_CREATE_ENDPOINT = "v1/vms"
+	VM_PIN_ENDPOINT                 = "pin"
 )
 
 const (
@@ -351,7 +350,7 @@ func pairHandler(db *sql.DB, conf interface{}, w http.ResponseWriter, r *http.Re
 		"http",
 		host.Host,
 		port,
-		"/pin",
+		VM_PIN_ENDPOINT,
 		http.MethodPost,
 		200,
 		body,
