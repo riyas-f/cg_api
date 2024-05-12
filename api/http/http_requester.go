@@ -61,14 +61,13 @@ func (h *HTTPRequest) Send(dest interface{}) responseerror.HTTPCustomError {
 
 	defer resp.Body.Close()
 
+	respBytes, err := io.ReadAll(resp.Body)
+	fmt.Println(string(respBytes))
+
 	if resp.StatusCode != h.SuccessStatusCode {
 		// if not provided a destination or that the status code don't match
 		// the expected return code
 		// store the payload in the payload field
-
-		respBytes, err := io.ReadAll(resp.Body)
-
-		fmt.Println(string(respBytes))
 
 		if err != nil {
 			return responseerror.CreateInternalServiceError(err)
@@ -94,7 +93,7 @@ func (h *HTTPRequest) Send(dest interface{}) responseerror.HTTPCustomError {
 		return nil
 	}
 
-	err = jsonutil.DecodeJSON(resp.Body, dest)
+	err = jsonutil.DecodeJSON(bytes.NewReader(respBytes), dest)
 
 	if err != nil {
 		return responseerror.CreateInternalServiceError(err)
