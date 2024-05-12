@@ -2,7 +2,6 @@ package routes
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -125,7 +124,7 @@ func createNewSessionHandler(db *sql.DB, conf interface{}, w http.ResponseWriter
 	// Propagate the error to the user
 	if err_ != nil {
 		tx.Rollback()
-		if errors.As(err_, &responseerror.InternalServiceError{}) {
+		if _, ok := err_.(*responseerror.InternalServiceError); ok {
 			return err_
 		}
 
@@ -364,8 +363,8 @@ func pairHandler(db *sql.DB, conf interface{}, w http.ResponseWriter, r *http.Re
 	if err != nil {
 		tx.Rollback()
 
-		if errors.As(err, &responseerror.InternalServiceError{}) {
-			return err.(responseerror.HTTPCustomError)
+		if internalErr, ok := err.(*responseerror.InternalServiceError); ok {
+			return internalErr
 		}
 
 		return responseerror.CreateBadRequestError(responseerror.InvalidPIN, responseerror.InvalidPINMessage, map[string]string{
