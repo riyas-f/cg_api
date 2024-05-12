@@ -68,6 +68,8 @@ func (h *HTTPRequest) Send(dest interface{}) responseerror.HTTPCustomError {
 
 		respBytes, err := io.ReadAll(resp.Body)
 
+		fmt.Println(string(respBytes))
+
 		if err != nil {
 			return responseerror.CreateInternalServiceError(err)
 		}
