@@ -2,6 +2,7 @@ package routes
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -23,7 +24,7 @@ import (
 const (
 	SESSION_MANAGER_HOST            string = ""
 	SESSION_MANAGER_PORT            int    = 5000
-	SESSION_MANAGER_CREATE_ENDPOINT        = "/create"
+	SESSION_MANAGER_CREATE_ENDPOINT        = "/v1/vms"
 )
 
 const (
@@ -40,7 +41,7 @@ var querynator = database.Querynator{
 }
 
 func createNewSessionHandler(db *sql.DB, conf interface{}, w http.ResponseWriter, r *http.Request) responseerror.HTTPCustomError {
-	// cf := conf.(*config.Config)
+	cf := conf.(*config.Config)
 	body := r.Context().Value(middleware.PayloadKey).(*payload.UserSession)
 
 	uuidv7, err := uuid.NewV7()
@@ -90,32 +91,48 @@ func createNewSessionHandler(db *sql.DB, conf interface{}, w http.ResponseWriter
 		return responseerror.CreateInternalServiceError(err)
 	}
 
-	// req := &httpx.HTTPRequest{}
-	// req, err_ := req.CreateRequest(
-	// 	"http",
-	// 	cf.Service.SessionManager.Host,
-	// 	cf.Service.SessionManager.Port,
-	// 	SESSION_MANAGER_CREATE_ENDPOINT,
-	// 	http.MethodPost,
-	// 	200,
-	// 	body,
-	// 	cf.Config,
-	// )
+	var sessionRequest struct {
+		Name        string `json:"name"`
+		SessionID   string `json:"SID"`
+		Description string `json:"desc"`
+		PCIDevice   string `json:"pci_device"`
+	}
 
-	// if err_ != nil {
-	// 	tx.Rollback()
-	// 	return responseerror.CreateInternalServiceError(err_)
-	// }
+	sessionRequest.Name = body.Username
+	sessionRequest.SessionID = sessionIdString
+	sessionRequest.Description = "VM Request"
+	sessionRequest.PCIDevice = ""
 
-	// err_ = req.Send(nil)
+	req := &httpx.HTTPRequest{}
+	req, err_ := req.CreateRequest(
+		"http",
+		cf.Service.SessionManager.Host,
+		cf.Service.SessionManager.Port,
+		SESSION_MANAGER_CREATE_ENDPOINT,
+		http.MethodPost,
+		200,
+		sessionRequest,
+		cf.Config,
+	)
 
-	// // Propagate the error to the user
-	// if err_ != nil {
-	// 	tx.Rollback()
-	// 	w.WriteHeader(req.ReturnedStatusCode)
-	// 	w.Write(req.Payload)
-	// 	return nil
-	// }
+	if err_ != nil {
+		tx.Rollback()
+		return responseerror.CreateInternalServiceError(err_)
+	}
+
+	err_ = req.Send(nil)
+
+	// Propagate the error to the user
+	if err_ != nil {
+		tx.Rollback()
+		if errors.As(err_, &responseerror.InternalServiceError{}) {
+			return err_
+		}
+
+		w.WriteHeader(req.ReturnedStatusCode)
+		w.Write(req.Payload)
+		return nil
+	}
 
 	tmp := struct {
 		Status    string `json:"status"`
@@ -346,6 +363,11 @@ func pairHandler(db *sql.DB, conf interface{}, w http.ResponseWriter, r *http.Re
 
 	if err != nil {
 		tx.Rollback()
+
+		if errors.As(err, &responseerror.InternalServiceError{}) {
+			return err.(responseerror.HTTPCustomError)
+		}
+
 		return responseerror.CreateBadRequestError(responseerror.InvalidPIN, responseerror.InvalidPINMessage, map[string]string{
 			"pin": body.PIN,
 		})
