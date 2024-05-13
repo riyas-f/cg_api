@@ -22,6 +22,7 @@ import (
 
 const (
 	SESSION_MANAGER_CREATE_ENDPOINT = "v1/vms"
+	SESSION_MANAGER_CHECK_TEMPLATES = "v1/vms/templates"
 	VM_PIN_ENDPOINT                 = "pin"
 )
 
@@ -89,6 +90,37 @@ func createNewSessionHandler(db *sql.DB, conf interface{}, w http.ResponseWriter
 		return responseerror.CreateInternalServiceError(err)
 	}
 
+	req := &httpx.HTTPRequest{}
+	req, err_ := req.CreateRequest(
+		"http",
+		cf.Service.SessionManager.Host,
+		cf.Service.SessionManager.Port,
+		SESSION_MANAGER_CHECK_TEMPLATES,
+		http.MethodGet,
+		200,
+		nil,
+		cf.Config,
+	)
+
+	if err_ != nil {
+		tx.Rollback()
+		return responseerror.CreateInternalServiceError(err_)
+	}
+
+	err_ = req.Send(nil)
+
+	// Propagate the error to the user
+	if err_ != nil {
+		tx.Rollback()
+		if _, ok := err_.(*responseerror.InternalServiceError); ok {
+			return err_
+		}
+
+		w.WriteHeader(err_.Get().Code)
+		w.Write(req.Payload)
+		return nil
+	}
+
 	var sessionRequest struct {
 		Name        string `json:"name"`
 		SessionID   string `json:"SID"`
@@ -101,8 +133,8 @@ func createNewSessionHandler(db *sql.DB, conf interface{}, w http.ResponseWriter
 	sessionRequest.Description = "VM Request"
 	sessionRequest.PCIDevice = ""
 
-	req := &httpx.HTTPRequest{}
-	req, err_ := req.CreateRequest(
+	req = &httpx.HTTPRequest{}
+	req, err_ = req.CreateRequest(
 		"http",
 		cf.Service.SessionManager.Host,
 		cf.Service.SessionManager.Port,
