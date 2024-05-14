@@ -29,6 +29,7 @@ CREATE TABLE user_session (
 CREATE TABLE session_host(
     host_id SERIAL PRIMARY KEY, 
     webhook_host VARCHAR(15) NOT NULL,
+    webhook_host_alt VARCHAR(15) NOT NULL,
     webhook_port INT NOT NULL,
     network_id VARCHAR(64) NOT NULL,
     session_id bytea NOT NULL,
