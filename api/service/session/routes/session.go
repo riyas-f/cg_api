@@ -22,7 +22,7 @@ import (
 
 const (
 	SESSION_MANAGER_CREATE_ENDPOINT = "v1/vms"
-	SESSION_MANAGER_DELETE_ENDPOINT = "v1/vms/{}"
+	SESSION_MANAGER_DELETE_ENDPOINT = "v1/vms/%s"
 	SESSION_MANAGER_CHECK_TEMPLATES = "v1/vms/templates"
 	VM_PIN_ENDPOINT                 = "sendpin"
 )
