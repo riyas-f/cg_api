@@ -22,6 +22,7 @@ import (
 
 const (
 	SESSION_MANAGER_CREATE_ENDPOINT = "v1/vms"
+	SESSION_MANAGER_DELETE_ENDPOINT = "v1/vms/{}"
 	SESSION_MANAGER_CHECK_TEMPLATES = "v1/vms/templates"
 	VM_PIN_ENDPOINT                 = "sendpin"
 )
@@ -425,6 +426,48 @@ func pairHandler(db *sql.DB, conf interface{}, w http.ResponseWriter, r *http.Re
 
 }
 
+func terminateSessionHandler(db *sql.DB, conf interface{}, w http.ResponseWriter, r *http.Request) responseerror.HTTPCustomError {
+	cf := conf.(*config.Config)
+	vars := mux.Vars(r)
+	sessionIDString := vars["session_id"]
+
+	_, err := uuid.Parse(sessionIDString)
+	if err != nil {
+		return responseerror.CreateBadRequestError(
+			responseerror.MalformedSessionID,
+			responseerror.MalformedSessionIDMessage,
+			map[string]string{
+				"id": "session_id",
+			},
+		)
+	}
+
+	req := &httpx.HTTPRequest{}
+	req, err = req.CreateRequest(
+		"http",
+		cf.Service.SessionManager.Host,
+		cf.Service.SessionManager.Port,
+		fmt.Sprintf(SESSION_MANAGER_DELETE_ENDPOINT, sessionIDString),
+		http.MethodDelete,
+		200,
+		nil,
+		cf.Config,
+	)
+
+	err = req.Send(nil)
+
+	if err != nil {
+		if internalErr, ok := err.(*responseerror.InternalServiceError); ok {
+			return internalErr
+		}
+
+		return err.(responseerror.HTTPCustomError)
+	}
+
+	return nil
+
+}
+
 func SetSessionRoute(r *mux.Router, db *sql.DB, conf *config.Config) {
 	subrouter := r.PathPrefix("/session").Subrouter()
 
@@ -472,4 +515,8 @@ func SetSessionRoute(r *mux.Router, db *sql.DB, conf *config.Config) {
 
 	pair := httpx.CreateHTTPHandler(db, conf, pairHandler)
 	subrouter.Handle("/{session_id}/pair", middleware.UseMiddleware(db, conf, pair, authMiddleware, pinPairPayloadMiddleware))
+
+	terminate := httpx.CreateHTTPHandler(db, conf, terminateSessionHandler)
+	subrouter.Handle("/{session_id}/pair", middleware.UseMiddleware(db, conf, terminate, authMiddleware))
+
 }
