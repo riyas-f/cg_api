@@ -22,11 +22,17 @@ type HTTPRequest struct {
 }
 
 func (h *HTTPRequest) CreateRequest(scheme string, host string, port int, endpoint string, method string, successStatus int, payload interface{}, tlsConfig *tls.Config) (*HTTPRequest, responseerror.HTTPCustomError) {
+	var json []byte
+	var err error
+
 	url := fmt.Sprintf("%s://%s:%d/%s", scheme, host, port, endpoint)
 
-	json, err := jsonutil.EncodeToJson(payload)
-	if err != nil {
-		return nil, responseerror.CreateInternalServiceError(err)
+	if payload != nil {
+		json, err = jsonutil.EncodeToJson(payload)
+
+		if err != nil {
+			return nil, responseerror.CreateInternalServiceError(err)
+		}
 	}
 
 	req, err := http.NewRequest(method, url, bytes.NewReader(json))
