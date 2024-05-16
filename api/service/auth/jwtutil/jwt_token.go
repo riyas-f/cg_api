@@ -64,7 +64,7 @@ func GenerateRefreshClaims(config *config.Config, username string, email string,
 	return &Claims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    config.ServiceName,
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Duration(config.Session.ExpireTime) * time.Minute)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Duration(config.Session.RefreshExpireTime) * time.Minute)),
 		},
 		Username:   username,
 		Email:      email,
