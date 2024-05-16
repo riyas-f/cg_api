@@ -15,7 +15,7 @@
 
     "token": {
         "expireTimeMinutes": "20",
-        "refreshExpireTimeMinutes": "60"
+        "refreshExpireTimeMinutes": "1440"
     },
 
     "services": {
