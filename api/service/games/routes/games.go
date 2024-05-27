@@ -42,6 +42,7 @@ type GameLocation struct {
 type SessionMetadata struct {
 	GameID       int          `json:"game_id"`
 	GameLocation GameLocation `json:"game_location"`
+	GPUName      string       `json:"gpu_name"`
 }
 
 type SessionRequest struct {
@@ -290,6 +291,7 @@ func playGamesHandler(db *sql.DB, conf interface{}, w http.ResponseWriter, r *ht
 					},
 					Location: dest[0].Location,
 				},
+				GPUName: body.GPU,
 			},
 		},
 		cf.Config,
