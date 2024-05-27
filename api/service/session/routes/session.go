@@ -216,7 +216,6 @@ func getRequestStatus(db *sql.DB, _ interface{}, w http.ResponseWriter, r *http.
 	joinTables := []struct {
 		payload.UserSession
 		payload.SessionHost
-		payload.Webhook
 	}{}
 
 	joinExecutor := querynator.PrepareJoinOperation()
@@ -226,7 +225,7 @@ func getRequestStatus(db *sql.DB, _ interface{}, w http.ResponseWriter, r *http.
 		{TableName: "user_session", ColumnName: "session_id", MatchValue: sessionID, Operand: database.EQ},
 	}, &joinTables, "user_session", database.LEFT_JOIN, map[string][]string{
 		"user_session": {"username", "request_status", "last_update"},
-		"session_host": {"network_id,string", "webhook_host_alt", "webhook_port"},
+		"session_host": {"network_id,string"},
 	})
 
 	if err != nil {
@@ -249,23 +248,12 @@ func getRequestStatus(db *sql.DB, _ interface{}, w http.ResponseWriter, r *http.
 		LastUpdatedAt string `json:"last_updated"`
 		RequestStatus string `json:"request_status"`
 		NetworkID     string `json:"network_id"`
-		Host          struct {
-			Host string `json:"ip"`
-			Port string `json:"port"`
-		} `json:"host"`
 	}{
 		Status:        "success",
 		Username:      joinTables[0].Username,
 		LastUpdatedAt: joinTables[0].LastUpdatedAt,
 		RequestStatus: joinTables[0].RequestStatus,
 		NetworkID:     joinTables[0].SessionHost.NetworkID,
-		Host: struct {
-			Host string "json:\"ip\""
-			Port string "json:\"port\""
-		}{
-			Host: joinTables[0].Webhook.HostAlt,
-			Port: joinTables[0].Webhook.Port,
-		},
 	}
 
 	json, err := jsonutil.EncodeToJson(tmp)
@@ -454,9 +442,6 @@ func terminateSessionHandler(db *sql.DB, conf interface{}, w http.ResponseWriter
 		)
 	}
 
-	// TODO : 	Check if the username has access to that
-	// 			Session ID
-
 	req := &httpx.HTTPRequest{}
 	req, err = req.CreateRequest(
 		"http",
@@ -505,7 +490,6 @@ func SetSessionRoute(r *mux.Router, db *sql.DB, conf *config.Config) {
 
 	startConnectionPayloadMiddleware, err := middleware.PayloadCheckMiddleware(&payload.SessionHost{},
 		"Webhook:Port",
-		"WebHook:HostAlt",
 		"Webhook:Host",
 		"NetworkID",
 	)
