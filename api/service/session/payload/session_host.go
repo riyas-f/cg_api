@@ -9,9 +9,8 @@ import (
 )
 
 type Webhook struct {
-	Host    string `json:"host" db:"webhook_host"`
-	HostAlt string `json:"host_alt" db:"webhook_host_alt"`
-	Port    string `json:"port" db:"webhook_port"`
+	Host string `json:"host" db:"webhook_host"`
+	Port string `json:"port" db:"webhook_port"`
 }
 
 type SessionHost struct {
