@@ -11,6 +11,7 @@ import (
 type UserGames struct {
 	Username string `db:"username" json:"username"`
 	GameID   int    `db:"game_id" json:"game_id"`
+	GPU      string `json:"gpu"`
 }
 
 type UserCollections struct {
