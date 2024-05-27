@@ -31,6 +31,13 @@ type QueryOperation interface {
 	QueryRow(query string, args ...interface{}) *sql.Row
 }
 
+type QueryOperationX interface {
+	Exec(query string, args ...interface{}) (sql.Result, error)
+	QueryRow(query string, args ...interface{}) *sql.Row
+	Get(dest interface{}, query string, args ...interface{}) error
+	Select(dest interface{}, query string, args ...interface{}) error
+}
+
 type Querynator struct {
 	DriverName string
 	// useTransaction bool
@@ -155,6 +162,19 @@ func (q *Querynator) Update(v interface{}, conditionNames []string, conditionVal
 	return err
 }
 
+func (q *Querynator) UpdateWithResults(v interface{}, conditionNames []string, conditionValues []any, db QueryOperation, tableName string) (sql.Result, error) {
+	keys, values, _ := getField(v, true)
+
+	updateFieldsString := transformNamesToUpdateQuery(keys, 1, ",")
+	conditionFieldsString := transformNamesToUpdateQuery(conditionNames, len(keys)+1, " AND ")
+
+	query := fmt.Sprintf("UPDATE %s SET %s WHERE %s", tableName, updateFieldsString, conditionFieldsString)
+
+	values = append(values, conditionValues...)
+
+	return db.Exec(query, values...)
+}
+
 func (q *Querynator) UpdateUsingColumnNames(columnNames []string, columnValues []any, conditionNames []string, conditionValues []any, db QueryOperation, tableName string) error {
 	updateFieldsString := transformNamesToUpdateQuery(columnNames, 1, ",")
 	conditionFieldsString := transformNamesToUpdateQuery(conditionNames, len(columnNames)+1, " AND ")
@@ -168,7 +188,7 @@ func (q *Querynator) UpdateUsingColumnNames(columnNames []string, columnValues [
 	return err
 }
 
-func (q *Querynator) IsExists(v interface{}, db *sql.DB, tableName string) (bool, error) {
+func (q *Querynator) IsExists(v interface{}, db QueryOperation, tableName string) (bool, error) {
 	// Check if a record exist with any of the field in V
 	//https://stackoverflow.com/questions/32554400/efficiently-determine-if-any-rows-satisfy-a-predicate-in-postgres?rq=3
 	var exists bool
@@ -187,8 +207,19 @@ func (q *Querynator) IsExists(v interface{}, db *sql.DB, tableName string) (bool
 	return exists, nil
 }
 
-func (q *Querynator) FindOne(v interface{}, dest interface{}, db *sql.DB, tableName string, returnFieldsName ...string) error {
-	dbSqlx := sqlx.NewDb(db, "postgres")
+func (q *Querynator) FindOne(v interface{}, dest interface{}, db QueryOperation, tableName string, returnFieldsName ...string) error {
+	var dbSqlx QueryOperationX
+
+	// Type inference
+	if db_, ok := db.(*sql.DB); ok {
+		dbSqlx = sqlx.NewDb(db_, "postgres")
+	} else {
+		if db_, ok := db.(*sql.Tx); ok {
+			dbSqlx = &sqlx.Tx{Tx: db_}
+		} else {
+			return fmt.Errorf("db must either have sql.DB type or sql.TX type")
+		}
+	}
 
 	keys, values, _ := getField(v, true)
 	conditionString := transformNamesToUpdateQuery(keys, 1, " AND ")
@@ -203,10 +234,20 @@ func (q *Querynator) FindOne(v interface{}, dest interface{}, db *sql.DB, tableN
 
 }
 
-func (q *Querynator) Find(v interface{}, dest interface{}, limit int, db *sql.DB, tableName string, returnFieldsName ...string) error {
+func (q *Querynator) Find(v interface{}, dest interface{}, limit int, db QueryOperation, tableName string, returnFieldsName ...string) error {
 	// Do some query here
+	var dbSqlx QueryOperationX
 
-	dbSqlx := sqlx.NewDb(db, "postgres")
+	// Type inference
+	if db_, ok := db.(*sql.DB); ok {
+		dbSqlx = sqlx.NewDb(db_, "postgres")
+	} else {
+		if db_, ok := db.(*sql.Tx); ok {
+			dbSqlx = &sqlx.Tx{Tx: db_}
+		} else {
+			return fmt.Errorf("db must either have sql.DB type or sql.TX type")
+		}
+	}
 
 	keys, values, _ := getField(v, true)
 	conditionString := transformNamesToUpdateQuery(keys, 1, " AND ")
@@ -224,8 +265,19 @@ func (q *Querynator) Find(v interface{}, dest interface{}, limit int, db *sql.DB
 	return err
 }
 
-func (q *Querynator) FindWithCondition(conditions []QueryCondition, dest interface{}, limit int, db *sql.DB, tableName string, returnFieldsName ...string) error {
-	dbSqlx := sqlx.NewDb(db, "postgres")
+func (q *Querynator) FindWithCondition(conditions []QueryCondition, dest interface{}, limit int, db QueryOperation, tableName string, returnFieldsName ...string) error {
+	var dbSqlx QueryOperationX
+
+	// Type inference
+	if db_, ok := db.(*sql.DB); ok {
+		dbSqlx = sqlx.NewDb(db_, "postgres")
+	} else {
+		if db_, ok := db.(*sql.Tx); ok {
+			dbSqlx = &sqlx.Tx{Tx: db_}
+		} else {
+			return fmt.Errorf("db must either have sql.DB type or sql.TX type")
+		}
+	}
 
 	conditionStrings, conditionValues := constructConditionClause(conditions, 0, false)
 
