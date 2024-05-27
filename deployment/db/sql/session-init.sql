@@ -16,7 +16,13 @@ SET TIME ZONE 'UTC';
 
 CREATE TYPE status_enum AS ENUM ('Provisioning', 'WaitingForConnection', 'Pairing', 'Running', 'Failed', 'Terminated');
 
-
+CREATE TABLE gpu_list {
+    gpu_id SERIAL PRIMARY KEY,
+    gpu_name VARCHAR(128) NOT NULL,
+    gpu_alt_name VARCHAR(128) NOT NULL,
+    n_available INTEGER NOT NULL,
+    version INTEGER NOT NULL, 
+}
 
 CREATE TABLE user_session (
     session_id bytea PRIMARY KEY,
