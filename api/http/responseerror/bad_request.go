@@ -19,6 +19,7 @@ const (
 	SteamAlreadyLinked   errorType = "steam_has_been_linked"
 	MalformedSessionID   errorType = "malformed_uuidv7_id"
 	InvalidPIN           errorType = "invalid_pin"
+	GPUNotAvailable      errorType = "gpu_not_available"
 )
 
 const (
@@ -38,6 +39,7 @@ const (
 	MalformedSessionIDMessage   errorMessageTemplate = "{{.id}} cannot be parsed as a valid uuidv7 id "
 	InvalidPINMessage           errorMessageTemplate = "{{.pin}} is invalid"
 	NonUniqueValueMessage       errorMessageTemplate = "{{.message}}"
+	GPUNotAvailableMessage      errorMessageTemplate = "{{.gpuName}} is not available"
 )
 
 // create response error with 400 Code and name string(t)
