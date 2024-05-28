@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/AdityaP1502/Instant-Messanging/api/database"
 	"github.com/AdityaP1502/Instant-Messanging/api/date"
@@ -18,6 +19,10 @@ import (
 	"github.com/AdityaP1502/Instant-Messanging/api/service/session/payload"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
+)
+
+const (
+	MAX_RETRIES = 3
 )
 
 const (
@@ -40,6 +45,130 @@ var querynator = database.Querynator{
 	DriverName: "postgres",
 }
 
+// // Use Locking
+// func deattachGPUFromUsers(body *payload.UserSession, db *sql.DB) responseerror.HTTPCustomError {
+// 	return nil
+// }
+
+// TODO: Improve Querynator for non string data types
+func attachGPUToUsers(body *payload.UserSession, db *sql.DB, retry int) (*sql.Tx, responseerror.HTTPCustomError) {
+	var dest payload.GPU
+
+	if retry >= MAX_RETRIES {
+		return nil, responseerror.CreateConflictError(
+			responseerror.UpdateConflictErr,
+			responseerror.UpdateConflictErrorMessage,
+			nil,
+		)
+	}
+
+	// Check if the gpu is available
+	err := querynator.FindOne(&payload.GPU{GPUName: body.SessionMetadata.GPUName}, &dest, db, "gpu_list", "n_available", "version", "gpu_alt_name", "gpu_id")
+
+	switch err {
+	case nil:
+		break
+	case sql.ErrNoRows:
+		return nil, responseerror.CreateNotFoundError(map[string]string{"resourceName": "gpu_name"})
+	default:
+		return nil, responseerror.CreateInternalServiceError(err)
+	}
+
+	// Optimistic cast
+	n, _ := strconv.Atoi(dest.Count)
+	v, _ := strconv.Atoi(dest.Version)
+
+	if n < 1 {
+		return nil, responseerror.CreateBadRequestError(responseerror.GPUNotAvailable,
+			responseerror.GPUNotAvailableMessage, map[string]string{
+				"gpuName": body.SessionMetadata.GPUName,
+			})
+	}
+
+	tx, err := db.Begin()
+	if err != nil {
+		return nil, responseerror.CreateInternalServiceError(err)
+	}
+
+	// Update the gpu entry
+	result, err := querynator.UpdateWithResults(
+		&payload.GPU{
+			Version: fmt.Sprintf("%d", v+1),
+			Count:   fmt.Sprintf("%d", n-1),
+		},
+		[]string{"gpu_id"},
+		[]any{dest.GPUID},
+		tx,
+		"gpu_list",
+	)
+
+	if err != nil {
+		return nil, responseerror.CreateInternalServiceError(err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+
+	if err != nil {
+		return nil, responseerror.CreateInternalServiceError(err)
+	}
+
+	// Recursive retry
+	if rowsAffected == 0 {
+		return attachGPUToUsers(body, db, retry+1)
+	}
+
+	tx.Commit()
+
+	return tx, nil
+}
+
+func getGPUStatusHandler(db *sql.DB, conf interface{}, w http.ResponseWriter, r *http.Request) responseerror.HTTPCustomError {
+	available := strings.ToLower(r.URL.Query().Get("only_available"))
+	limit := 0
+
+	if l, err := strconv.Atoi(r.URL.Query().Get("limit")); err == nil {
+		limit = l
+	}
+
+	min_count := 0
+
+	if available == "true" {
+		min_count = 1
+	}
+
+	var dest []payload.GPU
+
+	err := querynator.FindWithCondition(
+		[]database.QueryCondition{{TableName: "gpu_list", ColumnName: "n_available", MatchValue: min_count, Operand: database.GEQ}},
+		&dest,
+		limit,
+		db,
+		"gpu_list",
+		"gpu_name", "n_available", "version",
+	)
+
+	if err != nil {
+		return responseerror.CreateInternalServiceError(err)
+	}
+
+	response := struct {
+		Status string        `json:"status"`
+		GPUs   []payload.GPU `json:"gpu"`
+	}{
+		Status: "success",
+		GPUs:   dest,
+	}
+
+	json, err := jsonutil.EncodeToJson(&response)
+
+	if err != nil {
+		return responseerror.CreateInternalServiceError(err)
+	}
+
+	w.Write(json)
+
+	return nil
+}
 func createNewSessionHandler(db *sql.DB, conf interface{}, w http.ResponseWriter, r *http.Request) responseerror.HTTPCustomError {
 	cf := conf.(*config.Config)
 	body := r.Context().Value(middleware.PayloadKey).(*payload.UserSession)
@@ -70,9 +199,17 @@ func createNewSessionHandler(db *sql.DB, conf interface{}, w http.ResponseWriter
 	)
 	body.SessionMetadata.CreatedAt = date.GenerateTimestamp()
 
-	// Insert data isnto database
-	tx, err := db.Begin()
+	// This need improvement
+	gpuTX, err := attachGPUToUsers(body, db, 0)
+
 	if err != nil {
+		return err.(responseerror.HTTPCustomError)
+	}
+
+	tx, err := db.Begin()
+
+	if err != nil {
+		gpuTX.Rollback()
 		return responseerror.CreateInternalServiceError(err)
 	}
 
@@ -80,6 +217,7 @@ func createNewSessionHandler(db *sql.DB, conf interface{}, w http.ResponseWriter
 	_, err = querynator.Insert(body, tx, "user_session", "")
 
 	if err != nil {
+		gpuTX.Rollback()
 		tx.Rollback()
 		return responseerror.CreateInternalServiceError(err)
 	}
@@ -87,6 +225,7 @@ func createNewSessionHandler(db *sql.DB, conf interface{}, w http.ResponseWriter
 	// Insert the metadata into the database
 	_, err = querynator.Insert(body.SessionMetadata, tx, "session_metadata", "")
 	if err != nil {
+		gpuTX.Rollback()
 		tx.Rollback()
 		return responseerror.CreateInternalServiceError(err)
 	}
@@ -104,6 +243,7 @@ func createNewSessionHandler(db *sql.DB, conf interface{}, w http.ResponseWriter
 	)
 
 	if err_ != nil {
+		gpuTX.Rollback()
 		tx.Rollback()
 		return responseerror.CreateInternalServiceError(err_)
 	}
@@ -112,6 +252,7 @@ func createNewSessionHandler(db *sql.DB, conf interface{}, w http.ResponseWriter
 
 	// Propagate the error to the user
 	if err_ != nil {
+		gpuTX.Rollback()
 		tx.Rollback()
 		if _, ok := err_.(*responseerror.InternalServiceError); ok {
 			return err_
@@ -126,13 +267,13 @@ func createNewSessionHandler(db *sql.DB, conf interface{}, w http.ResponseWriter
 		Name        string `json:"name"`
 		SessionID   string `json:"SID"`
 		Description string `json:"desc"`
-		PCIDevice   string `json:"pci_device"`
+		//PCIDevice   string `json:"pci_device"`
 	}
 
 	sessionRequest.Name = body.Username
 	sessionRequest.SessionID = sessionIdString
 	sessionRequest.Description = "VM Request"
-	sessionRequest.PCIDevice = ""
+	//sessionRequest.PCIDevice = ""
 
 	req = &httpx.HTTPRequest{}
 	req, err_ = req.CreateRequest(
@@ -147,6 +288,7 @@ func createNewSessionHandler(db *sql.DB, conf interface{}, w http.ResponseWriter
 	)
 
 	if err_ != nil {
+		gpuTX.Rollback()
 		tx.Rollback()
 		return responseerror.CreateInternalServiceError(err_)
 	}
@@ -155,6 +297,7 @@ func createNewSessionHandler(db *sql.DB, conf interface{}, w http.ResponseWriter
 
 	// Propagate the error to the user
 	if err_ != nil {
+		gpuTX.Rollback()
 		tx.Rollback()
 		if _, ok := err_.(*responseerror.InternalServiceError); ok {
 			return err_
@@ -176,11 +319,13 @@ func createNewSessionHandler(db *sql.DB, conf interface{}, w http.ResponseWriter
 	json, err := jsonutil.EncodeToJson(tmp)
 
 	if err != nil {
+		gpuTX.Rollback()
 		tx.Rollback()
 		return responseerror.CreateInternalServiceError(err)
 	}
 
 	w.Write(json)
+	gpuTX.Commit()
 	tx.Commit()
 
 	return nil
@@ -479,6 +624,7 @@ func SetSessionRoute(r *mux.Router, db *sql.DB, conf *config.Config) {
 	createNewSessionPayloadMiddleware, err := middleware.PayloadCheckMiddleware(&payload.UserSession{},
 		"Username",
 		"SessionMetadata:GameID",
+		"SessionMetadata:GPUName",
 		"SessionMetadata:GameLocation:Protocol",
 		"SessionMetadata:GameLocation:Path",
 		"SessionMetadata:GameLocation:Server:IP",
@@ -507,16 +653,18 @@ func SetSessionRoute(r *mux.Router, db *sql.DB, conf *config.Config) {
 	createSession := httpx.CreateHTTPHandler(db, conf, createNewSessionHandler)
 	subrouter.Handle("/create", middleware.UseMiddleware(db, conf, createSession, certMiddleware, createNewSessionPayloadMiddleware))
 
+	getGPUStatus := httpx.CreateHTTPHandler(db, conf, getGPUStatusHandler)
+	subrouter.Handle("/gpu", getGPUStatus).Methods("GET")
+
 	getStatus := httpx.CreateHTTPHandler(db, conf, getRequestStatus)
-	subrouter.Handle("/{session_id}/status", middleware.UseMiddleware(db, conf, getStatus, authMiddleware))
+	subrouter.Handle("/{session_id}/status", middleware.UseMiddleware(db, conf, getStatus, authMiddleware)).Methods("GET")
 
 	startConnection := httpx.CreateHTTPHandler(db, conf, startConnectionEstablishmentHandler)
-	subrouter.Handle("/{session_id}/connection/start", middleware.UseMiddleware(db, conf, startConnection, startConnectionPayloadMiddleware))
+	subrouter.Handle("/{session_id}/connection/start", middleware.UseMiddleware(db, conf, startConnection, startConnectionPayloadMiddleware)).Methods("POST")
 
 	pair := httpx.CreateHTTPHandler(db, conf, pairHandler)
-	subrouter.Handle("/{session_id}/pair", middleware.UseMiddleware(db, conf, pair, authMiddleware, pinPairPayloadMiddleware))
+	subrouter.Handle("/{session_id}/pair", middleware.UseMiddleware(db, conf, pair, authMiddleware, pinPairPayloadMiddleware)).Methods("POST")
 
 	terminate := httpx.CreateHTTPHandler(db, conf, terminateSessionHandler)
-	subrouter.Handle("/{session_id}/terminate", middleware.UseMiddleware(db, conf, terminate, authMiddleware))
-
+	subrouter.Handle("/{session_id}/terminate", middleware.UseMiddleware(db, conf, terminate, authMiddleware)).Methods("DELETE")
 }
