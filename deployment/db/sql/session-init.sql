@@ -16,13 +16,13 @@ SET TIME ZONE 'UTC';
 
 CREATE TYPE status_enum AS ENUM ('Provisioning', 'WaitingForConnection', 'Pairing', 'Running', 'Failed', 'Terminated');
 
-CREATE TABLE gpu_list {
+CREATE TABLE gpu_list (
     gpu_id SERIAL PRIMARY KEY,
     gpu_name VARCHAR(128) NOT NULL,
     gpu_alt_name VARCHAR(128) NOT NULL,
     n_available INTEGER NOT NULL,
-    version INTEGER NOT NULL, 
-}
+    version INTEGER NOT NULL
+);
 
 CREATE TABLE user_session (
     session_id bytea PRIMARY KEY,
@@ -52,3 +52,7 @@ CREATE TABLE session_metadata(
     FOREIGN KEY (session_id) REFERENCES user_session(session_id)
 );
 
+INSERT INTO gpu_list(gpu_name,gpu_alt_name, n_available, version) 
+VALUES 
+	('Nvidia RTX 4070 TI', 'nvidia-rtx-4070-ti', 1, 0),
+	('Nvidia GTX 1080', 'nvidia-gtx-1080', 1, 0);
