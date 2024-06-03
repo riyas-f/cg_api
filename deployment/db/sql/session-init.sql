@@ -20,6 +20,7 @@ CREATE TABLE gpu_list (
     gpu_id SERIAL PRIMARY KEY,
     gpu_name VARCHAR(128) NOT NULL,
     gpu_alt_name VARCHAR(128) NOT NULL,
+    template_name VARCHAR(128) NOT NULL, 
     n_available INTEGER NOT NULL,
     version INTEGER NOT NULL
 );
@@ -42,6 +43,7 @@ CREATE TABLE session_host(
 );
 
 CREATE TABLE session_metadata(
+    gpu_id INT NOT NULL, 
     metadata_id SERIAL PRIMARY KEY,
     created_at TIMESTAMPTZ NOT NULL, 
     game_id INT NOT NULL,
@@ -49,10 +51,11 @@ CREATE TABLE session_metadata(
     game_location_server_host VARCHAR(64) NOT NULL,
     game_location_path VARCHAR(64) NOT NULL,
     session_id bytea NOT NULL,
-    FOREIGN KEY (session_id) REFERENCES user_session(session_id)
+    FOREIGN KEY (session_id) REFERENCES user_session(session_id),
+    FOREIGN KEY (gpu_id) REFERENCES gpu_list(gpu_id)
 );
 
-INSERT INTO gpu_list(gpu_name,gpu_alt_name, n_available, version) 
+INSERT INTO gpu_list(gpu_name,gpu_alt_name,template_name,n_available, version) 
 VALUES 
-	('Nvidia RTX 4070 TI', 'nvidia-rtx-4070-ti', 1, 0),
-	('Nvidia GTX 1080', 'nvidia-gtx-1080', 1, 0);
+	('Nvidia RTX 4070 TI', 'nvidia-rtx-4070-ti', 'GTX-4070-Ti-pve', 1, 0),
+	('Nvidia GTX 1080', 'nvidia-gtx-1080', 'GTX-1080-pve2-fixed', 1, 0);
