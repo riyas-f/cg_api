@@ -5,7 +5,8 @@ type SessionMetadata struct {
 	CreatedAt    string       `db:"created_at"`
 	GameID       int          `json:"game_id" db:"game_id"`
 	GameLocation GameLocation `json:"game_location"`
-	GPUName      string       `json:"gpu_name"`
+	GPUName      string       `json:"gpu_name" db:"-"`
+	GPUID        string       `json:"-" db:"gpu_id"`
 	SessionID    []byte       `json:"-" db:"session_id"`
 }
 
