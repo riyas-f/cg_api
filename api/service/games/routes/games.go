@@ -328,7 +328,6 @@ func SetGamesRoute(r *mux.Router, db *sql.DB, conf *config.Config) {
 		&payload.UserGames{},
 		"Username",
 		"GameID",
-		"GPU",
 	)
 
 	if err != nil {
