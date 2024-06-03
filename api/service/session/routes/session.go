@@ -51,11 +51,61 @@ var querynator = database.Querynator{
 // }
 
 // TODO: Improve Querynator for non string data types
-func attachGPUToUsers(body *payload.UserSession, db *sql.DB, retry int) (*sql.Tx, responseerror.HTTPCustomError) {
+func deacquireGPUFunction(sessionID []byte, db *sql.DB) responseerror.HTTPCustomError {
+	tx, err := db.Begin()
+
+	if err != nil {
+		return responseerror.CreateInternalServiceError(err)
+	}
+
+	lockQuerier := querynator.UseLockTransaction(tx, []database.QueryCondition{
+		{TableName: "user_session", ColumnName: "session_id", MatchValue: sessionID, Operand: database.EQ},
+	})
+
+	lockQuerier.UseJoin(database.INNER_JOIN)
+	lockQuerier.AddJoinTable("session_metadata", "session_id", "user_session", "session_id")
+	lockQuerier.AddJoinTable("gpu_list", "gpu_id", "session_metadata", "gpu_id")
+
+	dest := []payload.GPU{}
+
+	err = lockQuerier.SetLock("user_session", "gpu_list", &dest, map[string][]string{
+		"gpu_list": {"n_available", "version", "gpu_id"},
+	})
+
+	switch err {
+	case nil:
+		break
+	case sql.ErrNoRows:
+		return responseerror.CreateNotFoundError(map[string]string{"resourceName": "session_id"})
+	default:
+		return responseerror.CreateInternalServiceError(err)
+	}
+
+	gpu := dest[0]
+
+	nGPU, _ := strconv.Atoi(gpu.Count)
+	nVersion, _ := strconv.Atoi(gpu.Version)
+
+	gpu.Count = fmt.Sprintf("%d", nGPU+1)
+	gpu.Version = fmt.Sprintf("%d", nVersion+1)
+
+	_, err_ := lockQuerier.Update(&payload.GPU{Count: fmt.Sprintf("%d", nGPU+1), Version: fmt.Sprintf("%d", nVersion+1)}, "gpu_list", []string{"gpu_id", "version"}, []any{gpu.GPUID, gpu.Version})
+
+	if err_ != nil {
+		tx.Rollback()
+		return responseerror.CreateInternalServiceError(err_)
+	}
+
+	tx.Commit()
+
+	return nil
+}
+
+func attachGPUToUsers(body *payload.UserSession, db *sql.DB, retry int) (*payload.GPU, *sql.Tx, responseerror.HTTPCustomError) {
 	var dest payload.GPU
 
 	if retry >= MAX_RETRIES {
-		return nil, responseerror.CreateConflictError(
+		return nil, nil, responseerror.CreateConflictError(
 			responseerror.UpdateConflictErr,
 			responseerror.UpdateConflictErrorMessage,
 			nil,
@@ -63,15 +113,37 @@ func attachGPUToUsers(body *payload.UserSession, db *sql.DB, retry int) (*sql.Tx
 	}
 
 	// Check if the gpu is available
-	err := querynator.FindOne(&payload.GPU{GPUName: body.SessionMetadata.GPUName}, &dest, db, "gpu_list", "n_available", "version", "gpu_alt_name", "gpu_id")
+	var err error
+	if body.SessionMetadata.GPUName != "" {
+		err = querynator.FindOne(&payload.GPU{GPUName: body.SessionMetadata.GPUName}, &dest, db, "gpu_list", "n_available", "version", "template_name", "gpu_id")
+	} else {
+		destArray := []payload.GPU{}
+
+		err = querynator.FindWithCondition(
+			[]database.QueryCondition{
+				{TableName: "gpu_list", MatchValue: 1, Operand: database.GEQ, ColumnName: "n_available"},
+			},
+			&destArray,
+			1,
+			db,
+			"gpu_list",
+			"n_available", "version", "gpu_alt_name", "gpu_id", "template_name",
+		)
+
+		// Capturing zero array error will be handled
+		// below
+		if len(destArray) > 0 {
+			dest = destArray[0]
+		}
+	}
 
 	switch err {
 	case nil:
 		break
 	case sql.ErrNoRows:
-		return nil, responseerror.CreateNotFoundError(map[string]string{"resourceName": "gpu_name"})
+		return nil, nil, responseerror.CreateNotFoundError(map[string]string{"resourceName": "gpu"})
 	default:
-		return nil, responseerror.CreateInternalServiceError(err)
+		return nil, nil, responseerror.CreateInternalServiceError(err)
 	}
 
 	// Optimistic cast
@@ -79,7 +151,7 @@ func attachGPUToUsers(body *payload.UserSession, db *sql.DB, retry int) (*sql.Tx
 	v, _ := strconv.Atoi(dest.Version)
 
 	if n < 1 {
-		return nil, responseerror.CreateBadRequestError(responseerror.GPUNotAvailable,
+		return nil, nil, responseerror.CreateBadRequestError(responseerror.GPUNotAvailable,
 			responseerror.GPUNotAvailableMessage, map[string]string{
 				"gpuName": body.SessionMetadata.GPUName,
 			})
@@ -87,7 +159,7 @@ func attachGPUToUsers(body *payload.UserSession, db *sql.DB, retry int) (*sql.Tx
 
 	tx, err := db.Begin()
 	if err != nil {
-		return nil, responseerror.CreateInternalServiceError(err)
+		return nil, nil, responseerror.CreateInternalServiceError(err)
 	}
 
 	// Update the gpu entry
@@ -103,13 +175,13 @@ func attachGPUToUsers(body *payload.UserSession, db *sql.DB, retry int) (*sql.Tx
 	)
 
 	if err != nil {
-		return nil, responseerror.CreateInternalServiceError(err)
+		return nil, nil, responseerror.CreateInternalServiceError(err)
 	}
 
 	rowsAffected, err := result.RowsAffected()
 
 	if err != nil {
-		return nil, responseerror.CreateInternalServiceError(err)
+		return nil, nil, responseerror.CreateInternalServiceError(err)
 	}
 
 	// Recursive retry
@@ -119,7 +191,7 @@ func attachGPUToUsers(body *payload.UserSession, db *sql.DB, retry int) (*sql.Tx
 
 	tx.Commit()
 
-	return tx, nil
+	return &dest, tx, nil
 }
 
 func getGPUStatusHandler(db *sql.DB, conf interface{}, w http.ResponseWriter, r *http.Request) responseerror.HTTPCustomError {
@@ -170,7 +242,7 @@ func getGPUStatusHandler(db *sql.DB, conf interface{}, w http.ResponseWriter, r 
 	return nil
 }
 func createNewSessionHandler(db *sql.DB, conf interface{}, w http.ResponseWriter, r *http.Request) responseerror.HTTPCustomError {
-	cf := conf.(*config.Config)
+	// cf := conf.(*config.Config)
 	body := r.Context().Value(middleware.PayloadKey).(*payload.UserSession)
 
 	uuidv7, err := uuid.NewV7()
@@ -200,16 +272,18 @@ func createNewSessionHandler(db *sql.DB, conf interface{}, w http.ResponseWriter
 	body.SessionMetadata.CreatedAt = date.GenerateTimestamp()
 
 	// This need improvement
-	gpuTX, err := attachGPUToUsers(body, db, 0)
+	gpu, _, err := attachGPUToUsers(body, db, 0)
 
 	if err != nil {
-		return err.(responseerror.HTTPCustomError)
+		return deacquireGPUFunction(sessionId, db)
 	}
+
+	body.SessionMetadata.GPUID = gpu.GPUID
 
 	tx, err := db.Begin()
 
 	if err != nil {
-		gpuTX.Rollback()
+		deacquireGPUFunction(sessionId, db)
 		return responseerror.CreateInternalServiceError(err)
 	}
 
@@ -217,7 +291,7 @@ func createNewSessionHandler(db *sql.DB, conf interface{}, w http.ResponseWriter
 	_, err = querynator.Insert(body, tx, "user_session", "")
 
 	if err != nil {
-		gpuTX.Rollback()
+		deacquireGPUFunction(sessionId, db)
 		tx.Rollback()
 		return responseerror.CreateInternalServiceError(err)
 	}
@@ -225,107 +299,113 @@ func createNewSessionHandler(db *sql.DB, conf interface{}, w http.ResponseWriter
 	// Insert the metadata into the database
 	_, err = querynator.Insert(body.SessionMetadata, tx, "session_metadata", "")
 	if err != nil {
-		gpuTX.Rollback()
+		deacquireGPUFunction(sessionId, db)
 		tx.Rollback()
 		return responseerror.CreateInternalServiceError(err)
 	}
 
-	req := &httpx.HTTPRequest{}
-	req, err_ := req.CreateRequest(
-		"http",
-		cf.Service.SessionManager.Host,
-		cf.Service.SessionManager.Port,
-		SESSION_MANAGER_CHECK_TEMPLATES,
-		http.MethodGet,
-		200,
-		nil,
-		cf.Config,
-	)
+	// req := &httpx.HTTPRequest{}
+	// req, err_ := req.CreateRequest(
+	// 	"http",
+	// 	cf.Service.SessionManager.Host,
+	// 	cf.Service.SessionManager.Port,
+	// 	SESSION_MANAGER_CHECK_TEMPLATES,
+	// 	http.MethodGet,
+	// 	200,
+	// 	nil,
+	// 	cf.Config,
+	// )
 
-	if err_ != nil {
-		gpuTX.Rollback()
-		tx.Rollback()
-		return responseerror.CreateInternalServiceError(err_)
-	}
+	// if err_ != nil {
+	// 	deacquireGPUFunction(sessionId, db)
+	// 	tx.Rollback()
+	// 	return responseerror.CreateInternalServiceError(err_)
+	// }
 
-	err_ = req.Send(nil)
+	// err_ = req.Send(nil)
 
-	// Propagate the error to the user
-	if err_ != nil {
-		gpuTX.Rollback()
-		tx.Rollback()
-		if _, ok := err_.(*responseerror.InternalServiceError); ok {
-			return err_
-		}
+	// // Propagate the error to the user
+	// if err_ != nil {
+	// 	deacquireGPUFunction(sessionId, db)
+	// 	tx.Rollback()
+	// 	if _, ok := err_.(*responseerror.InternalServiceError); ok {
+	// 		return err_
+	// 	}
 
-		w.WriteHeader(err_.Get().Code)
-		w.Write(req.Payload)
-		return nil
-	}
+	// 	w.WriteHeader(err_.Get().Code)
+	// 	w.Write(req.Payload)
+	// 	return nil
+	// }
 
 	var sessionRequest struct {
 		Name        string `json:"name"`
 		SessionID   string `json:"SID"`
 		Description string `json:"desc"`
+		Template    string
 		//PCIDevice   string `json:"pci_device"`
 	}
 
 	sessionRequest.Name = body.Username
 	sessionRequest.SessionID = sessionIdString
 	sessionRequest.Description = "VM Request"
+	sessionRequest.Template = gpu.TemplateName
+
+	fmt.Println(sessionRequest)
+
 	//sessionRequest.PCIDevice = ""
 
-	req = &httpx.HTTPRequest{}
-	req, err_ = req.CreateRequest(
-		"http",
-		cf.Service.SessionManager.Host,
-		cf.Service.SessionManager.Port,
-		SESSION_MANAGER_CREATE_ENDPOINT,
-		http.MethodPost,
-		200,
-		sessionRequest,
-		cf.Config,
-	)
+	// req = &httpx.HTTPRequest{}
+	// req, err_ = req.CreateRequest(
+	// 	"http",
+	// 	cf.Service.SessionManager.Host,
+	// 	cf.Service.SessionManager.Port,
+	// 	SESSION_MANAGER_CREATE_ENDPOINT,
+	// 	http.MethodPost,
+	// 	200,
+	// 	sessionRequest,
+	// 	cf.Config,
+	// )
 
-	if err_ != nil {
-		gpuTX.Rollback()
-		tx.Rollback()
-		return responseerror.CreateInternalServiceError(err_)
-	}
+	// if err_ != nil {
+	// 	deacquireGPUFunction(sessionId, db)
+	// 	tx.Rollback()
+	// 	return responseerror.CreateInternalServiceError(err_)
+	// }
 
-	err_ = req.Send(nil)
+	// err_ = req.Send(nil)
 
-	// Propagate the error to the user
-	if err_ != nil {
-		gpuTX.Rollback()
-		tx.Rollback()
-		if _, ok := err_.(*responseerror.InternalServiceError); ok {
-			return err_
-		}
+	// // Propagate the error to the user
+	// if err_ != nil {
+	// 	deacquireGPUFunction(sessionId, db)
+	// 	tx.Rollback()
+	// 	if _, ok := err_.(*responseerror.InternalServiceError); ok {
+	// 		return err_
+	// 	}
 
-		w.WriteHeader(err_.Get().Code)
-		w.Write(req.Payload)
-		return nil
-	}
+	// 	w.WriteHeader(err_.Get().Code)
+	// 	w.Write(req.Payload)
+	// 	return nil
+	// }
 
 	tmp := struct {
 		Status    string `json:"status"`
+		GPUName   string `json:"gpu_name"`
 		SessionID string `json:"session_id"`
 	}{
 		Status:    "success",
 		SessionID: sessionIdString,
+		GPUName:   gpu.GPUName,
 	}
 
 	json, err := jsonutil.EncodeToJson(tmp)
 
 	if err != nil {
-		gpuTX.Rollback()
+		deacquireGPUFunction(sessionId, db)
 		tx.Rollback()
 		return responseerror.CreateInternalServiceError(err)
 	}
 
 	w.Write(json)
-	gpuTX.Commit()
 	tx.Commit()
 
 	return nil
@@ -609,8 +689,54 @@ func terminateSessionHandler(db *sql.DB, conf interface{}, w http.ResponseWriter
 		return err.(responseerror.HTTPCustomError)
 	}
 
+	// TODO: Delete sessionID
 	return nil
 
+}
+
+func deaacquireGPUHandler(db *sql.DB, _ interface{}, w http.ResponseWriter, r *http.Request) responseerror.HTTPCustomError {
+	vars := mux.Vars(r)
+	sessionIDString := vars["session_id"]
+
+	uuidv7, err := uuid.Parse(sessionIDString)
+	if err != nil {
+		return responseerror.CreateBadRequestError(
+			responseerror.MalformedSessionID,
+			responseerror.MalformedSessionIDMessage,
+			map[string]string{
+				"id": "session_id",
+			},
+		)
+	}
+
+	sessionID, err := uuidv7.MarshalBinary()
+	if err != nil {
+		return responseerror.CreateInternalServiceError(err)
+	}
+
+	err = deacquireGPUFunction(sessionID, db)
+
+	if err != nil {
+		return err.(responseerror.HTTPCustomError)
+	}
+
+	tmp := struct {
+		Status  string `json:"status"`
+		Message string `json:"message"`
+	}{
+		Status:  "success",
+		Message: "instance gpu has been removed",
+	}
+
+	json, err := jsonutil.EncodeToJson(tmp)
+
+	if err != nil {
+		return responseerror.CreateInternalServiceError(err)
+	}
+
+	w.Write(json)
+
+	return nil
 }
 
 func SetSessionRoute(r *mux.Router, db *sql.DB, conf *config.Config) {
@@ -624,7 +750,6 @@ func SetSessionRoute(r *mux.Router, db *sql.DB, conf *config.Config) {
 	createNewSessionPayloadMiddleware, err := middleware.PayloadCheckMiddleware(&payload.UserSession{},
 		"Username",
 		"SessionMetadata:GameID",
-		"SessionMetadata:GPUName",
 		"SessionMetadata:GameLocation:Protocol",
 		"SessionMetadata:GameLocation:Path",
 		"SessionMetadata:GameLocation:Server:IP",
@@ -667,4 +792,8 @@ func SetSessionRoute(r *mux.Router, db *sql.DB, conf *config.Config) {
 
 	terminate := httpx.CreateHTTPHandler(db, conf, terminateSessionHandler)
 	subrouter.Handle("/{session_id}/terminate", middleware.UseMiddleware(db, conf, terminate, authMiddleware)).Methods("DELETE")
+
+	deacquireGPU := httpx.CreateHTTPHandler(db, conf, deaacquireGPUHandler)
+	subrouter.Handle("/{session_id}/gpu/deacquire", deacquireGPU).Methods("POST")
+
 }
