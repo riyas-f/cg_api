@@ -86,9 +86,6 @@ func deacquireGPUFunction(sessionID []byte, db *sql.DB) responseerror.HTTPCustom
 	nGPU, _ := strconv.Atoi(gpu.Count)
 	nVersion, _ := strconv.Atoi(gpu.Version)
 
-	gpu.Count = fmt.Sprintf("%d", nGPU+1)
-	gpu.Version = fmt.Sprintf("%d", nVersion+1)
-
 	_, err_ := lockQuerier.Update(&payload.GPU{Count: fmt.Sprintf("%d", nGPU+1), Version: fmt.Sprintf("%d", nVersion+1)}, "gpu_list", []string{"gpu_id", "version"}, []any{gpu.GPUID, gpu.Version})
 
 	if err_ != nil {
