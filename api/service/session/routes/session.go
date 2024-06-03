@@ -76,13 +76,16 @@ func deacquireGPUFunction(sessionID []byte, db *sql.DB) responseerror.HTTPCustom
 	case nil:
 		break
 	case sql.ErrNoRows:
-		return responseerror.CreateNotFoundError(map[string]string{"resourceName": "session_id"})
+		return responseerror.CreateNotFoundError(map[string]string{"resourceName": "gpu"})
 	default:
 		return responseerror.CreateInternalServiceError(err)
 	}
 
-	gpu := dest[0]
+	if len(dest) == 0 {
+		return responseerror.CreateNotFoundError(map[string]string{"resourceName": "gpu"})
+	}
 
+	gpu := dest[0]
 	nGPU, _ := strconv.Atoi(gpu.Count)
 	nVersion, _ := strconv.Atoi(gpu.Version)
 
@@ -272,7 +275,7 @@ func createNewSessionHandler(db *sql.DB, conf interface{}, w http.ResponseWriter
 	gpu, _, err := attachGPUToUsers(body, db, 0)
 
 	if err != nil {
-		return deacquireGPUFunction(sessionId, db)
+		return err.(responseerror.HTTPCustomError)
 	}
 
 	body.SessionMetadata.GPUID = gpu.GPUID
