@@ -242,7 +242,7 @@ func getGPUStatusHandler(db *sql.DB, conf interface{}, w http.ResponseWriter, r 
 	return nil
 }
 func createNewSessionHandler(db *sql.DB, conf interface{}, w http.ResponseWriter, r *http.Request) responseerror.HTTPCustomError {
-	// cf := conf.(*config.Config)
+	cf := conf.(*config.Config)
 	body := r.Context().Value(middleware.PayloadKey).(*payload.UserSession)
 
 	uuidv7, err := uuid.NewV7()
@@ -341,7 +341,7 @@ func createNewSessionHandler(db *sql.DB, conf interface{}, w http.ResponseWriter
 		Name        string `json:"name"`
 		SessionID   string `json:"SID"`
 		Description string `json:"desc"`
-		Template    string
+		Template    string `json:"clone"`
 		//PCIDevice   string `json:"pci_device"`
 	}
 
@@ -354,38 +354,38 @@ func createNewSessionHandler(db *sql.DB, conf interface{}, w http.ResponseWriter
 
 	//sessionRequest.PCIDevice = ""
 
-	// req = &httpx.HTTPRequest{}
-	// req, err_ = req.CreateRequest(
-	// 	"http",
-	// 	cf.Service.SessionManager.Host,
-	// 	cf.Service.SessionManager.Port,
-	// 	SESSION_MANAGER_CREATE_ENDPOINT,
-	// 	http.MethodPost,
-	// 	200,
-	// 	sessionRequest,
-	// 	cf.Config,
-	// )
+	req := &httpx.HTTPRequest{}
+	req, err_ := req.CreateRequest(
+		"http",
+		cf.Service.SessionManager.Host,
+		cf.Service.SessionManager.Port,
+		SESSION_MANAGER_CREATE_ENDPOINT,
+		http.MethodPost,
+		200,
+		sessionRequest,
+		cf.Config,
+	)
 
-	// if err_ != nil {
-	// 	deacquireGPUFunction(sessionId, db)
-	// 	tx.Rollback()
-	// 	return responseerror.CreateInternalServiceError(err_)
-	// }
+	if err_ != nil {
+		deacquireGPUFunction(sessionId, db)
+		tx.Rollback()
+		return responseerror.CreateInternalServiceError(err_)
+	}
 
-	// err_ = req.Send(nil)
+	err_ = req.Send(nil)
 
-	// // Propagate the error to the user
-	// if err_ != nil {
-	// 	deacquireGPUFunction(sessionId, db)
-	// 	tx.Rollback()
-	// 	if _, ok := err_.(*responseerror.InternalServiceError); ok {
-	// 		return err_
-	// 	}
+	// Propagate the error to the user
+	if err_ != nil {
+		deacquireGPUFunction(sessionId, db)
+		tx.Rollback()
+		if _, ok := err_.(*responseerror.InternalServiceError); ok {
+			return err_
+		}
 
-	// 	w.WriteHeader(err_.Get().Code)
-	// 	w.Write(req.Payload)
-	// 	return nil
-	// }
+		w.WriteHeader(err_.Get().Code)
+		w.Write(req.Payload)
+		return nil
+	}
 
 	tmp := struct {
 		Status    string `json:"status"`
