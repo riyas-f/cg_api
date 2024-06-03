@@ -57,5 +57,5 @@ CREATE TABLE session_metadata(
 
 INSERT INTO gpu_list(gpu_name,gpu_alt_name,template_name,n_available, version) 
 VALUES 
-	('Nvidia RTX 4070 TI', 'nvidia-rtx-4070-ti', 'GTX-4070-Ti-pve', 1, 0),
+	('Nvidia RTX 4070 TI', 'nvidia-rtx-4070-ti', 'GTX-4070-Ti-pve-fixed', 1, 0),
 	('Nvidia GTX 1080', 'nvidia-gtx-1080', 'GTX-1080-pve2-fixed', 1, 0);
