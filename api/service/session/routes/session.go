@@ -115,7 +115,7 @@ func attachGPUToUsers(body *payload.UserSession, db *sql.DB, retry int) (*payloa
 	// Check if the gpu is available
 	var err error
 	if body.SessionMetadata.GPUName != "" {
-		err = querynator.FindOne(&payload.GPU{GPUName: body.SessionMetadata.GPUName}, &dest, db, "gpu_list", "n_available", "version", "template_name", "gpu_id")
+		err = querynator.FindOne(&payload.GPU{GPUName: body.SessionMetadata.GPUName}, &dest, db, "gpu_list", "n_available", "version", "template_name", "gpu_id", "gpu_name")
 	} else {
 		destArray := []payload.GPU{}
 
@@ -127,7 +127,7 @@ func attachGPUToUsers(body *payload.UserSession, db *sql.DB, retry int) (*payloa
 			1,
 			db,
 			"gpu_list",
-			"n_available", "version", "gpu_alt_name", "gpu_id", "template_name",
+			"n_available", "version", "gpu_alt_name", "gpu_id", "template_name", "gpu_name",
 		)
 
 		// Capturing zero array error will be handled

@@ -267,6 +267,7 @@ func playGamesHandler(db *sql.DB, conf interface{}, w http.ResponseWriter, r *ht
 	tmp1 := struct {
 		Status    string `json:"status"`
 		Message   string `json:"message,omitempty"`
+		GPUName   string `json:"gpu_name"`
 		SessionID string `json:"session_id"`
 	}{}
 
