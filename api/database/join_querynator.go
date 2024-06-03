@@ -62,7 +62,7 @@ func (e *JoinQueryExecutor) AddJoinTable(joinTableName string, joinKeyName strin
 }
 
 // returnFields is a map with key is the table name and the value is the column name that you want to return
-func (e *JoinQueryExecutor) Find(db *sql.DB, condition []QueryCondition, dest interface{}, tableName string, joinClause JoinClause, returnFields map[string][]string) error {
+func (e *JoinQueryExecutor) Find(db QueryOperation, condition []QueryCondition, dest interface{}, tableName string, joinClause JoinClause, returnFields map[string][]string) error {
 	// if reflect.TypeOf(dest).Kind() != reflect.Slice {
 	// 	return fmt.Errorf("illegal arguments. dest must be a slice")
 	// }
@@ -106,7 +106,15 @@ func (e *JoinQueryExecutor) Find(db *sql.DB, condition []QueryCondition, dest in
 		}
 	}
 
-	returnFieldsString := strings.Join(fields, ",")
+	var returnFieldsString string
+
+	// set * as a default return string
+	if len(fields) == 0 {
+		returnFieldsString = "*"
+	} else {
+
+		returnFieldsString = strings.Join(fields, ",")
+	}
 
 	// construct query
 	query := fmt.Sprintf(`SELECT %s FROM %s %s WHERE %s`, returnFieldsString, tableName, join, whereClause)
@@ -120,11 +128,117 @@ func (e *JoinQueryExecutor) Find(db *sql.DB, condition []QueryCondition, dest in
 	}
 
 	fmt.Println(query)
-	dbX := sqlx.NewDb(db, "postgres")
 
-	err := dbX.Select(dest, query, valueArgs...)
+	var dbSqlx QueryOperationX
+
+	// Type inference
+	if db_, ok := db.(*sql.DB); ok {
+		dbSqlx = sqlx.NewDb(db_, "postgres")
+	} else {
+		if db_, ok := db.(*sql.Tx); ok {
+			dbSqlx = &sqlx.Tx{Tx: db_}
+		} else {
+			return fmt.Errorf("db must either have sql.DB type or sql.TX type")
+		}
+	}
+
+	err := dbSqlx.Select(dest, query, valueArgs...)
 
 	return err
+}
+
+func (e *JoinQueryExecutor) createQuery(conditionString []string, tableName string, joinClause JoinClause, returnFields map[string][]string) (string, error) {
+	join := ""
+
+	for _, relation := range e.tableRelations {
+		join += constructJoinClause(
+			relation.SourceTableName,
+			relation.SourceIDColumnName,
+			relation.ReceiverTableName,
+			relation.ReceiverIDColumnName,
+			joinClause,
+		) + " "
+	}
+
+	// construct select clause
+	fields := make([]string, 0, len(returnFields))
+
+	for k, v := range returnFields {
+		for _, column := range v {
+			nameSplit := strings.SplitN(column, ",", 2)
+			if len(nameSplit) > 1 {
+				s, err := constructDefaultValue(fmt.Sprintf("%s.%s", k, nameSplit[0]), nameSplit[0], nameSplit[1])
+
+				if err != nil {
+					return "", err
+				}
+
+				fields = append(fields, s)
+				continue
+			}
+			fields = append(fields, fmt.Sprintf("%s.%s", k, column))
+		}
+	}
+
+	var returnFieldsString string
+
+	// set * as a default return string
+	if len(fields) == 0 {
+		returnFieldsString = "*"
+	} else {
+
+		returnFieldsString = strings.Join(fields, ",")
+	}
+
+	// construct query
+	query := fmt.Sprintf(`SELECT %s FROM %s %s`, returnFieldsString, tableName, join)
+
+	if conditionString != nil {
+		whereClause := strings.Join(conditionString, " AND ")
+		query += fmt.Sprintf("WHERE %s", whereClause)
+	}
+
+	if e.orderBy != "" {
+		query = fmt.Sprintf("%s ORDER BY %s %s", query, e.orderBy, e.orderByType)
+	}
+
+	if e.limit > 0 {
+		query = fmt.Sprintf("%s LIMIT %d", query, e.limit)
+	}
+
+	return query, nil
+}
+
+func (e *JoinQueryExecutor) Query(db QueryOperation, condition []QueryCondition, tableName string, joinClause JoinClause, returnFields map[string][]string) (*sql.Rows, error) {
+	// if reflect.TypeOf(dest).Kind() != reflect.Slice {
+	// 	return fmt.Errorf("illegal arguments. dest must be a slice")
+	// }
+
+	// construct where clause
+	conditionString, valueArgs := constructConditionClause(condition, 0, e.useExplicitCast)
+
+	query, err := e.createQuery(conditionString, tableName, joinClause, returnFields)
+
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println(query)
+
+	var dbSqlx QueryOperationX
+
+	// Type inference
+	if db_, ok := db.(*sql.DB); ok {
+		dbSqlx = sqlx.NewDb(db_, "postgres")
+	} else {
+		if db_, ok := db.(*sql.Tx); ok {
+			dbSqlx = &sqlx.Tx{Tx: db_}
+		} else {
+			return nil, fmt.Errorf("db must either have sql.DB type or sql.TX type")
+		}
+	}
+
+	return dbSqlx.Query(query, valueArgs...)
 }
 
 func constructDefaultValue(returnFieldsName string, columnName string, dataType string) (string, error) {
@@ -140,6 +254,7 @@ func constructDefaultValue(returnFieldsName string, columnName string, dataType 
 
 	}
 }
+
 func constructJoinClause(sourceTable string, sourceID string, receiverTable string, receiverID string, joinClause JoinClause) string {
 	clause := fmt.Sprintf("%s %s ON %s.%s = %s.%s", joinClause, sourceTable, sourceTable, sourceID, receiverTable, receiverID)
 	return clause

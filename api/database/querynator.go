@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/jmoiron/sqlx/reflectx"
 )
 
 type MatchOperand string
@@ -29,11 +30,13 @@ type QueryCondition struct {
 type QueryOperation interface {
 	Exec(query string, args ...interface{}) (sql.Result, error)
 	QueryRow(query string, args ...interface{}) *sql.Row
+	Query(query string, args ...interface{}) (*sql.Rows, error)
 }
 
 type QueryOperationX interface {
 	Exec(query string, args ...interface{}) (sql.Result, error)
 	QueryRow(query string, args ...interface{}) *sql.Row
+	Query(query string, args ...interface{}) (*sql.Rows, error)
 	Get(dest interface{}, query string, args ...interface{}) error
 	Select(dest interface{}, query string, args ...interface{}) error
 }
@@ -215,7 +218,7 @@ func (q *Querynator) FindOne(v interface{}, dest interface{}, db QueryOperation,
 		dbSqlx = sqlx.NewDb(db_, "postgres")
 	} else {
 		if db_, ok := db.(*sql.Tx); ok {
-			dbSqlx = &sqlx.Tx{Tx: db_}
+			dbSqlx = &sqlx.Tx{Tx: db_, Mapper: reflectx.NewMapperFunc("db", sqlx.NameMapper)}
 		} else {
 			return fmt.Errorf("db must either have sql.DB type or sql.TX type")
 		}
@@ -243,7 +246,7 @@ func (q *Querynator) Find(v interface{}, dest interface{}, limit int, db QueryOp
 		dbSqlx = sqlx.NewDb(db_, "postgres")
 	} else {
 		if db_, ok := db.(*sql.Tx); ok {
-			dbSqlx = &sqlx.Tx{Tx: db_}
+			dbSqlx = &sqlx.Tx{Tx: db_, Mapper: reflectx.NewMapperFunc("db", sqlx.NameMapper)}
 		} else {
 			return fmt.Errorf("db must either have sql.DB type or sql.TX type")
 		}
@@ -378,7 +381,19 @@ func transformNamesToUpdateQuery(names []string, start int, sep string) string {
 	return q[:len(q)-len(sep)]
 }
 
+func (q *Querynator) UseLockTransaction(tx *sql.Tx, conditions []QueryCondition) *LockQuerynator {
+	return &LockQuerynator{
+		Tx:         tx,
+		condition:  conditions,
+		querynator: q,
+	}
+}
+
 func constructConditionClause(conditions []QueryCondition, offset int, useExplicitCast bool) ([]string, []any) {
+	if len(conditions) == 0 {
+		return nil, nil
+	}
+
 	conditionStrings := make([]string, 0, len(conditions))
 	valueArgs := make([]any, 0, len(conditions))
 
