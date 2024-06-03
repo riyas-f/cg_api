@@ -13,6 +13,7 @@ type GPU struct {
 	Version        string `db:"version" json:"-"`
 	GPUName        string `json:"gpu_name" db:"gpu_name"`
 	GPUDisplayName string `json:"gpu_display_name" db:"gpu_alt_name"`
+	TemplateName   string `json:"template_name" db:"template_name"`
 	Count          string `json:"n_available" db:"n_available"`
 }
 
