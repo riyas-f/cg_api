@@ -405,6 +405,9 @@ func createNewSessionHandler(db *sql.DB, conf interface{}, w http.ResponseWriter
 		return responseerror.CreateInternalServiceError(err)
 	}
 
+	// TODO: create a better logger
+	fmt.Printf("[INFO] SID of %s has acquired GPU %s\n", sessionIdString, gpu.GPUName)
+
 	w.Write(json)
 	tx.Commit()
 
