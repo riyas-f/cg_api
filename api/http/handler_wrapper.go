@@ -34,6 +34,8 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			Message:   requestErr.Message,
 		}
 
+		fmt.Printf("[INFO] Sending an error response with code %d: %s", requestErr.Code, requestErr.Name)
+
 		w.WriteHeader(requestErr.Code)
 
 		json, err := jsonutil.EncodeToJson(&errorResponse)
