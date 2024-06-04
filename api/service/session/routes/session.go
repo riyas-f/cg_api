@@ -30,6 +30,7 @@ const (
 	SESSION_MANAGER_DELETE_ENDPOINT = "v1/vms/%s"
 	SESSION_MANAGER_CHECK_TEMPLATES = "v1/vms/templates"
 	VM_PIN_ENDPOINT                 = "sendpin"
+	VM_TERMINATE_ENDPOINT           = "nukethisvm"
 )
 
 const (
@@ -44,6 +45,23 @@ const (
 var querynator = database.Querynator{
 	DriverName: "postgres",
 }
+
+// func getHostIP(sid []byte, db *sql.DB, host *payload.Webhook) error {
+// 	err := querynator.FindOne(&payload.SessionHost{SessionID_: sid}, host, db, "session_host", "webhook_host", "webhook_port")
+
+// 	switch err {
+// 	case nil:
+// 		break
+// 	case sql.ErrNoRows:
+// 		return responseerror.CreateNotFoundError(map[string]string{
+// 			"resourceName": "session_id",
+// 		})
+// 	default:
+// 		return responseerror.CreateInternalServiceError(err)
+// 	}
+
+// 	return nil
+// }
 
 // // Use Locking
 // func deattachGPUFromUsers(body *payload.UserSession, db *sql.DB) responseerror.HTTPCustomError {
@@ -675,7 +693,48 @@ func terminateSessionHandler(db *sql.DB, conf interface{}, w http.ResponseWriter
 		return responseerror.CreateInternalServiceError(err)
 	}
 
+	host := &payload.Webhook{}
+	err = querynator.FindOne(&payload.SessionHost{SessionID_: sessionID}, host, db, "session_host", "webhook_host", "webhook_port")
+	switch err {
+	case nil:
+		break
+	case sql.ErrNoRows:
+		return responseerror.CreateNotFoundError(map[string]string{
+			"resourceName": "session_id",
+		})
+	default:
+		return responseerror.CreateInternalServiceError(err)
+	}
+
+	port, err := strconv.Atoi(host.Port)
+
+	if err != nil {
+		return responseerror.CreateInternalServiceError(err)
+	}
+
 	req := &httpx.HTTPRequest{}
+	req, err = req.CreateRequest(
+		"http",
+		host.Host,
+		port,
+		VM_TERMINATE_ENDPOINT,
+		http.MethodDelete,
+		200,
+		nil,
+		cf.Config,
+	)
+
+	err = req.Send(nil)
+
+	if err != nil {
+		if internalErr, ok := err.(*responseerror.InternalServiceError); ok {
+			return internalErr
+		}
+
+		return err.(responseerror.HTTPCustomError)
+	}
+
+	req = &httpx.HTTPRequest{}
 	req, err = req.CreateRequest(
 		"http",
 		cf.Service.SessionManager.Host,
