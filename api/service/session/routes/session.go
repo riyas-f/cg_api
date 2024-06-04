@@ -659,7 +659,7 @@ func terminateSessionHandler(db *sql.DB, conf interface{}, w http.ResponseWriter
 	vars := mux.Vars(r)
 	sessionIDString := vars["session_id"]
 
-	_, err := uuid.Parse(sessionIDString)
+	uuidv7, err := uuid.Parse(sessionIDString)
 	if err != nil {
 		return responseerror.CreateBadRequestError(
 			responseerror.MalformedSessionID,
@@ -668,6 +668,11 @@ func terminateSessionHandler(db *sql.DB, conf interface{}, w http.ResponseWriter
 				"id": "session_id",
 			},
 		)
+	}
+
+	sessionID, err := uuidv7.MarshalBinary()
+	if err != nil {
+		return responseerror.CreateInternalServiceError(err)
 	}
 
 	req := &httpx.HTTPRequest{}
@@ -689,6 +694,12 @@ func terminateSessionHandler(db *sql.DB, conf interface{}, w http.ResponseWriter
 			return internalErr
 		}
 
+		return err.(responseerror.HTTPCustomError)
+	}
+
+	err = deacquireGPUFunction(sessionID, db)
+
+	if err != nil {
 		return err.(responseerror.HTTPCustomError)
 	}
 
