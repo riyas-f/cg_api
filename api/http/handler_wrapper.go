@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/AdityaP1502/Instant-Messanging/api/date"
 	"github.com/AdityaP1502/Instant-Messanging/api/http/responseerror"
 	"github.com/AdityaP1502/Instant-Messanging/api/jsonutil"
 )
@@ -34,7 +35,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			Message:   requestErr.Message,
 		}
 
-		fmt.Printf("[INFO] Sending an error response with code %d: %s", requestErr.Code, requestErr.Name)
+		fmt.Printf("[INFO] %s: Sending an error response with code %d with error %s", date.GenerateTimestamp(), requestErr.Code, requestErr.Name)
 
 		w.WriteHeader(requestErr.Code)
 
