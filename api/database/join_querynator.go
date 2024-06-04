@@ -82,7 +82,7 @@ func (e *JoinQueryExecutor) Find(db QueryOperation, condition []QueryCondition, 
 	// construct where clause
 	conditionString, valueArgs := constructConditionClause(condition, 0, e.useExplicitCast)
 
-	fmt.Println(valueArgs...)
+	// fmt.Println(valueArgs...)
 
 	whereClause := strings.Join(conditionString, " AND ")
 
@@ -127,7 +127,7 @@ func (e *JoinQueryExecutor) Find(db QueryOperation, condition []QueryCondition, 
 		query = fmt.Sprintf("%s LIMIT %d", query, e.limit)
 	}
 
-	fmt.Println(query)
+	// fmt.Println(query)
 
 	var dbSqlx QueryOperationX
 
@@ -223,7 +223,7 @@ func (e *JoinQueryExecutor) Query(db QueryOperation, condition []QueryCondition,
 		return nil, err
 	}
 
-	fmt.Println(query)
+	// fmt.Println(query)
 
 	var dbSqlx QueryOperationX
 
