@@ -152,15 +152,12 @@ func attachGPUToUsers(body *payload.UserSession, db *sql.DB, retry int) (*payloa
 		// below
 		if len(destArray) > 0 {
 			dest = destArray[0]
+		} else {
+			return nil, nil, responseerror.CreateNotFoundError(map[string]string{"resourceName": "gpu"})
 		}
 	}
 
-	switch err {
-	case nil:
-		break
-	case sql.ErrNoRows:
-		return nil, nil, responseerror.CreateNotFoundError(map[string]string{"resourceName": "gpu"})
-	default:
+	if err != nil {
 		return nil, nil, responseerror.CreateInternalServiceError(err)
 	}
 
@@ -169,10 +166,7 @@ func attachGPUToUsers(body *payload.UserSession, db *sql.DB, retry int) (*payloa
 	v, _ := strconv.Atoi(dest.Version)
 
 	if n < 1 {
-		return nil, nil, responseerror.CreateBadRequestError(responseerror.GPUNotAvailable,
-			responseerror.GPUNotAvailableMessage, map[string]string{
-				"gpuName": body.SessionMetadata.GPUName,
-			})
+		return nil, nil, responseerror.CreateNotFoundError(map[string]string{"resourceName": "gpu"})
 	}
 
 	tx, err := db.Begin()
