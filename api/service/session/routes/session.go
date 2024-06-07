@@ -354,13 +354,14 @@ func createNewSessionHandler(db *sql.DB, conf interface{}, w http.ResponseWriter
 		SessionID   string `json:"SID"`
 		Description string `json:"desc"`
 		Template    string `json:"clone"`
-		//PCIDevice   string `json:"pci_device"`
+		PCIDevice   string `json:"pci_device"`
 	}
 
 	sessionRequest.Name = body.Username
 	sessionRequest.SessionID = sessionIdString
 	sessionRequest.Description = "VM Request"
 	sessionRequest.Template = gpu.TemplateName
+	sessionRequest.PCIDevice = gpu.GPUDisplayName
 
 	fmt.Println(sessionRequest)
 
