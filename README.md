@@ -20,3 +20,7 @@ $ cd cert-manager && docker-compose build && docker-compose up -d
 $ cd ../deployment && docker-compose build && docker-compose up -d
 ```
 4. API will be available on port 3000
+
+
+## Docs
+API Documentation can be viewed on https://cloud-gaming-ta.github.io/api-docs/
