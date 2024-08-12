@@ -1,69 +1,69 @@
-# obisidian files
-.obsidian
+# # obisidian files
+# .obsidian
 
-# Eclipse Settings
-**/.settings
+# # Eclipse Settings
+# **/.settings
 
-# Eclipse m2e generated files
-# Eclipse Core
-.project
-# JDT-specific (Eclipse Java Development Tools)
-.classpath
-# VSCode Settings
-.vscode
-.metadata
+# # Eclipse m2e generated files
+# # Eclipse Core
+# .project
+# # JDT-specific (Eclipse Java Development Tools)
+# .classpath
+# # VSCode Settings
+# .vscode
+# .metadata
 
-# maven project
-**/target
-pom.xml.tag
-pom.xml.releaseBackup
-pom.xml.versionsBackup
-pom.xml.next
-release.properties
-dependency-reduced-pom.xml
-buildNumber.properties
-.mvn/timing.properties
-.mvn/wrapper/maven-wrapper.jar
-**/.metadata/
+# # maven project
+# **/target
+# pom.xml.tag
+# pom.xml.releaseBackup
+# pom.xml.versionsBackup
+# pom.xml.next
+# release.properties
+# dependency-reduced-pom.xml
+# buildNumber.properties
+# .mvn/timing.properties
+# .mvn/wrapper/maven-wrapper.jar
+# **/.metadata/
 
-# python 
-*.pyc
-Client/process/doodle/*
+# # python 
+# *.pyc
+# Client/process/doodle/*
 
-# node js
-**/node_modules/
+# # node js
+# **/node_modules/
 
-# other files
-*.txt
-*.csv
-*.env
-**.json
-!app.config.json
+# # other files
+# *.txt
+# *.csv
+# *.env
+# **.json
+# !app.config.json
 
-# go binary 
-**/bin/
-*.exe
-*.o
+# # go binary 
+# **/bin/
+# *.exe
+# *.o
 
-# local files
-local/
-**/test_env/
-*.sql
+# # local files
+# local/
+# **/test_env/
+# *.sql
 
-# don't ignore init.sql
-!init.sql
-!*-init.sql
+# # don't ignore init.sql
+# !init.sql
+# !*-init.sql
 
-# private key and certificate
-cert
-*.key
-*.cert
-*.pem
-*.crt
+# # private key and certificate
+# cert
+# *.key
+# *.cert
+# *.pem
+# *.crt
 
-**/env
-**/site
+# **/env
+# **/site
 
 
-# don't include any secrets text file
-**/secrets
+# # # don't include any secrets text file
+# # **/secrets
